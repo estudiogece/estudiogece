@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Iniciar um projeto — Estúdio Gecê</title>
+  <meta name="description" content="Briefing de projeto: responda algumas perguntas e receba um orçamento do Estúdio Gecê." />
+  <link rel="icon" type="image/png" href="/assets/img/logo-gece-transp.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap site-header__inner">
+      <a class="brand-logo" href="/" aria-label="Estúdio Gecê — início">
+        <img src="/assets/img/logo-gece-transp.png" alt="Estúdio Gecê" />
+      </a>
+      <nav class="nav" aria-label="Principal">
+        <a href="/#estudio">Quem somos</a>
+        <a href="/#projetos">Projetos</a>
+        <a href="/#contato">Contato</a>
+        <a class="nav__cta" href="/">← Voltar</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="form-hero">
+      <div class="wrap">
+        <p class="eyebrow">Iniciar um projeto</p>
+        <h1>Briefing &amp; solicitação de orçamento</h1>
+        <p>
+          Responda as perguntas abaixo. Ao final, geramos uma mensagem com tudo organizado
+          que abre direto no nosso WhatsApp — daí retornamos com os próximos passos e o orçamento.
+          Os campos com <span class="required">*</span> são essenciais.
+        </p>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="wrap">
+        <form id="briefing" class="fbody" novalidate>
+
+          <!-- 1. CONTATO -->
+          <div class="fsection">
+            <div class="fsection__num"><span>01</span><h2>Dados de contato</h2></div>
+            <div class="field">
+              <label>Nome completo <span class="required">*</span></label>
+              <input type="text" name="nome" required />
+            </div>
+            <div class="field">
+              <label>Telefone (WhatsApp) <span class="required">*</span></label>
+              <input type="tel" name="telefone" placeholder="(79) 9 0000-0000" required />
+            </div>
+            <div class="field">
+              <label>E-mail</label>
+              <input type="email" name="email" placeholder="voce@email.com" />
+            </div>
+          </div>
+
+          <!-- 2. IMÓVEL -->
+          <div class="fsection">
+            <div class="fsection__num"><span>02</span><h2>O imóvel</h2></div>
+            <div class="field">
+              <label>Tipo de imóvel</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="tipo" value="Apartamento" /><span>Apartamento</span></label>
+                <label class="opt"><input type="radio" name="tipo" value="Casa" /><span>Casa</span></label>
+                <label class="opt"><input type="radio" name="tipo" value="Sala Comercial" /><span>Sala Comercial</span></label>
+                <label class="opt"><input type="radio" name="tipo" value="Outro" /><span>Outro</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>O imóvel é</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="estado" value="Novo / na planta" /><span>Novo / na planta</span></label>
+                <label class="opt"><input type="radio" name="estado" value="Usado (vai precisar de reforma)" /><span>Usado (vai precisar de reforma)</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>Localização (bairro / condomínio)</label>
+              <input type="text" name="local" />
+            </div>
+            <div class="field">
+              <label>Metragem total estimada dos ambientes a projetar</label>
+              <input type="text" name="metragem" placeholder="Ex: 50 m², 120 m²…" />
+              <span class="hint">Se não souber, descreva o tamanho aproximado.</span>
+            </div>
+          </div>
+
+          <!-- 3. ESCOPO -->
+          <div class="fsection">
+            <div class="fsection__num"><span>03</span><h2>O escopo</h2></div>
+            <div class="field">
+              <label>Quais ambientes farão parte do projeto?</label>
+              <textarea name="ambientes" placeholder="Ex: sala integrada com cozinha, 2 quartos, 2 banheiros e varanda."></textarea>
+            </div>
+            <div class="field">
+              <label>Qual nível de intervenção você imagina?</label>
+              <div class="opts">
+                <label class="opt"><input type="radio" name="intervencao" value="Apenas decoração, pintura e marcenaria (sem quebra-quebra)" /><span>Apenas decoração, pintura e marcenaria (sem quebra-quebra)</span></label>
+                <label class="opt"><input type="radio" name="intervencao" value="Reforma média (troca de revestimentos, forro de gesso, iluminação)" /><span>Reforma média (revestimentos, forro de gesso, iluminação)</span></label>
+                <label class="opt"><input type="radio" name="intervencao" value="Reforma pesada (demolição de paredes, mudanças estruturais, hidráulica nova)" /><span>Reforma pesada (demolição, mudanças estruturais, hidráulica nova)</span></label>
+                <label class="opt"><input type="radio" name="intervencao" value="Construção do zero (projeto arquitetônico completo)" /><span>Construção do zero (projeto arquitetônico completo)</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>Você já possui a planta baixa do imóvel?</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="planta" value="Sim" /><span>Sim</span></label>
+                <label class="opt"><input type="radio" name="planta" value="Não" /><span>Não</span></label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. PRAZOS E INVESTIMENTO -->
+          <div class="fsection">
+            <div class="fsection__num"><span>04</span><h2>Prazos e investimento</h2></div>
+            <div class="field">
+              <label>Qual a sua urgência para o início da obra/projeto?</label>
+              <input type="text" name="urgencia" placeholder="Ex: o quanto antes, em 3 meses, sem pressa…" />
+            </div>
+            <div class="field">
+              <label>Estimativa de orçamento reservado para a <strong>execução</strong> da obra/reforma</label>
+              <div class="opts">
+                <label class="opt"><input type="radio" name="orcamento" value="Até R$ 30.000" /><span>Até R$ 30.000</span></label>
+                <label class="opt"><input type="radio" name="orcamento" value="De R$ 30.000 a R$ 100.000" /><span>De R$ 30.000 a R$ 100.000</span></label>
+                <label class="opt"><input type="radio" name="orcamento" value="De R$ 100.000 a R$ 500.000" /><span>De R$ 100.000 a R$ 500.000</span></label>
+                <label class="opt"><input type="radio" name="orcamento" value="Acima de R$ 500.000" /><span>Acima de R$ 500.000</span></label>
+              </div>
+              <span class="hint">Ajuda a alinhar as soluções do projeto à sua realidade financeira.</span>
+            </div>
+          </div>
+
+          <!-- 5. APOIO -->
+          <div class="fsection">
+            <div class="fsection__num"><span>05</span><h2>Arquivos de apoio</h2></div>
+            <div class="field">
+              <label>Link da sua pasta de referências (Pinterest, Drive…)</label>
+              <input type="url" name="referencias" placeholder="https://…" />
+            </div>
+            <div class="field">
+              <label>Observações</label>
+              <textarea name="obs" placeholder="Algo a mais que queira nos contar?"></textarea>
+            </div>
+            <p class="fnote">
+              📎 <strong>Fotos do espaço e a planta do imóvel:</strong> depois de enviar este resumo,
+              é só anexar as imagens direto na conversa do WhatsApp que vai abrir.
+            </p>
+          </div>
+
+          <!-- ENVIO -->
+          <div class="fsubmit">
+            <button type="submit" class="btn btn--solid">Enviar pelo WhatsApp →</button>
+            <p class="form-alt">Prefere e-mail? <a href="#" id="enviar-email">Enviar por e-mail</a>.</p>
+          </div>
+
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="site-footer__top">
+        <a class="site-footer__logo" href="/" aria-label="Estúdio Gecê">
+          <img src="/assets/img/logo-gece-branco.png" alt="Estúdio Gecê" />
+        </a>
+        <span class="site-footer__tag">Gabriel Câmara · Arquiteto e Urbanista</span>
+      </div>
+      <div class="site-footer__legal">
+        <span>© <span data-year>2026</span> Estúdio Gecê LTDA · Aracaju/SE</span>
+        <a href="/admin/">Área do administrador</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var WHATS = "5579991021377";
+      var EMAIL = "gcamara@estudiogece.com.br";
+      var form = document.getElementById("briefing");
+
+      var y = document.querySelector("[data-year]");
+      if (y) y.textContent = new Date().getFullYear();
+
+      function val(name) {
+        var el = form.elements[name];
+        if (!el) return "";
+        if (el.length && el[0] && el[0].type === "radio") {
+          for (var i = 0; i < el.length; i++) if (el[i].checked) return el[i].value;
+          return "";
+        }
+        return (el.value || "").trim();
+      }
+      function line(label, v) { return label + ": " + (v ? v : "—"); }
+
+      function buildMessage() {
+        var L = [];
+        L.push("*BRIEFING — ESTÚDIO GECÊ*");
+        L.push("");
+        L.push("*1. Contato*");
+        L.push(line("Nome", val("nome")));
+        L.push(line("WhatsApp", val("telefone")));
+        L.push(line("E-mail", val("email")));
+        L.push("");
+        L.push("*2. Imóvel*");
+        L.push(line("Tipo", val("tipo")));
+        L.push(line("Estado", val("estado")));
+        L.push(line("Localização", val("local")));
+        L.push(line("Metragem", val("metragem")));
+        L.push("");
+        L.push("*3. Escopo*");
+        L.push(line("Ambientes", val("ambientes")));
+        L.push(line("Intervenção", val("intervencao")));
+        L.push(line("Possui planta", val("planta")));
+        L.push("");
+        L.push("*4. Prazos e investimento*");
+        L.push(line("Urgência", val("urgencia")));
+        L.push(line("Orçamento (execução)", val("orcamento")));
+        L.push("");
+        L.push("*5. Referências*");
+        L.push(line("Link", val("referencias")));
+        L.push(line("Observações", val("obs")));
+        return L.join("\n");
+      }
+
+      function validate() {
+        if (!val("nome") || !val("telefone")) {
+          alert("Por favor, preencha pelo menos o nome e o telefone (WhatsApp).");
+          (val("nome") ? form.elements["telefone"] : form.elements["nome"]).focus();
+          return false;
+        }
+        return true;
+      }
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        if (!validate()) return;
+        var url = "https://wa.me/" + WHATS + "?text=" + encodeURIComponent(buildMessage());
+        window.open(url, "_blank");
+      });
+
+      document.getElementById("enviar-email").addEventListener("click", function (e) {
+        e.preventDefault();
+        if (!validate()) return;
+        var subject = "Briefing de projeto — " + (val("nome") || "novo contato");
+        var url = "mailto:" + EMAIL + "?subject=" + encodeURIComponent(subject) +
+                  "&body=" + encodeURIComponent(buildMessage());
+        window.location.href = url;
+      });
+    })();
+  </script>
+</body>
+</html>
