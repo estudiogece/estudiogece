@@ -3,13 +3,13 @@
 Site institucional/portfólio com a identidade real do Estúdio Gecê (bordô + branco, DM Sans + Montserrat, logo e grafismo "g"). HTML, CSS e JS puros — sem build. Roda no Cloudflare Pages/Workers e atualiza a cada `git push`.
 
 ```
-site/
+/
 ├── index.html              # Página principal
 ├── 404.html
 ├── admin/index.html        # Área privada (futuro app)
 ├── assets/
-│   ├── css/styles.css       # Estilo (cores/fontes no topo, bloco :root)
-│   ├── js/main.js           # Menu mobile + animações
+│   ├── css/styles.css      # Estilo (cores/fontes no topo, bloco :root)
+│   ├── js/main.js          # Menu mobile + animações
 │   └── img/
 │       ├── logo-gece-transp.png   # Logo bordô (header)
 │       ├── logo-gece-branco.png   # Logo branco (rodapé/fundo bordô)
