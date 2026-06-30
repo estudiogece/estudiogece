@@ -5,84 +5,46 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin — Estúdio Gecê</title>
   <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/png" href="/assets/img/logo-gece-transp.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Montserrat:wght@300;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/assets/css/styles.css" />
   <style>
     .admin-shell { min-height: 100vh; display: flex; flex-direction: column; }
-    .admin-bar {
-      border-bottom: 1px solid var(--line);
-      background: var(--paper-2);
-    }
-    .admin-bar__inner {
-      display: flex; align-items: center; justify-content: space-between;
-      height: 64px;
-    }
-    .admin-bar .brand { font-size: 17px; }
-    .pill {
-      font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em;
-      text-transform: uppercase; color: var(--accent-ink);
-      border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px;
-    }
+    .admin-bar { border-bottom: 1px solid var(--line); background: var(--white); }
+    .admin-bar__inner { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+    .admin-bar img { height: 32px; width: auto; }
+    .pill { font-family: var(--font-label); font-weight: 500; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--bordo); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; }
     .admin-main { flex: 1; display: flex; align-items: center; }
-    .panel {
-      max-width: 620px; border: 1px solid var(--line); border-radius: var(--radius);
-      background: var(--paper-2); padding: clamp(28px, 5vw, 52px);
-    }
-    .panel h1 { font-size: clamp(28px, 5vw, 44px); margin-bottom: 16px; }
+    .panel { max-width: 640px; border: 1px solid var(--line); border-left: 4px solid var(--bordo); border-radius: var(--radius); background: var(--paper); padding: clamp(28px, 5vw, 54px); }
+    .panel h1 { font-size: clamp(28px, 5vw, 46px); margin-bottom: 16px; }
     .panel p { color: var(--ink-soft); }
-    .panel p + p { margin-top: 14px; }
     .checklist { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 12px; }
-    .checklist li {
-      display: flex; gap: 12px; align-items: flex-start;
-      font-size: 15px; padding-bottom: 12px; border-bottom: 1px solid var(--line);
-    }
-    .checklist .mono { font-family: var(--font-mono); font-size: 12px; color: var(--accent-ink); padding-top: 2px; }
-    .panel__actions { margin-top: 28px; }
+    .checklist li { display: flex; gap: 14px; align-items: flex-start; font-size: 15px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+    .checklist .mono { font-family: var(--font-label); font-weight: 600; font-size: 12px; color: var(--bordo); padding-top: 2px; }
   </style>
 </head>
 <body>
   <div class="admin-shell">
     <div class="admin-bar">
       <div class="wrap admin-bar__inner">
-        <span class="brand">Estúdio Gecê <span class="brand__mark">/admin</span></span>
+        <img src="/assets/img/logo-gece-transp.png" alt="Estúdio Gecê" />
         <span class="pill">Ambiente privado</span>
       </div>
     </div>
-
     <div class="admin-main">
       <div class="wrap">
         <div class="panel">
           <p class="eyebrow">Painel do administrador</p>
           <h1>Base pronta para o app.</h1>
-          <p>
-            Esta é a área privada do site. É aqui que o seu aplicativo vai morar.
-            Por enquanto é só a casca — o próximo passo é definir o que o app faz e
-            proteger este caminho.
-          </p>
-
+          <p>Esta é a área privada do site — onde o seu aplicativo vai morar. Por enquanto é só a casca; o próximo passo é definir o que o app faz e proteger este caminho.</p>
           <ul class="checklist">
-            <li>
-              <span class="mono">01</span>
-              <span>Proteger <code>/admin</code> com <strong>Cloudflare Access</strong>
-              (login só com o seu e-mail) antes de colocar dados aqui.</span>
-            </li>
-            <li>
-              <span class="mono">02</span>
-              <span>Definir a função do app (ex.: gestão de clientes, propostas,
-              acompanhamento de obras).</span>
-            </li>
-            <li>
-              <span class="mono">03</span>
-              <span>Ligar back-end na Cloudflare: <strong>Pages Functions</strong>
-              + banco <strong>D1</strong> para guardar dados.</span>
-            </li>
+            <li><span class="mono">01</span><span>Proteger <code>/admin</code> com <strong>Cloudflare Access</strong> (login só com o seu e-mail) antes de colocar dados aqui.</span></li>
+            <li><span class="mono">02</span><span>Definir a função do app (ex.: gestão de clientes, propostas, acompanhamento de obras).</span></li>
+            <li><span class="mono">03</span><span>Ligar back-end na Cloudflare: <strong>Pages/Workers Functions</strong> + banco <strong>D1</strong>.</span></li>
           </ul>
-
-          <div class="panel__actions">
-            <a class="btn btn--ghost" href="/">← Voltar ao site</a>
-          </div>
+          <div style="margin-top:28px"><a class="btn btn--ghost" href="/">← Voltar ao site</a></div>
         </div>
       </div>
     </div>

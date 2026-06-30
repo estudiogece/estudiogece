@@ -4,27 +4,29 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Estúdio Gecê — Arquitetura, interiores e urbanismo · Aracaju/SE</title>
-  <meta name="description" content="Estúdio Gecê: arquitetura que resolve problemas reais. Projetos residenciais, comerciais, de interiores e intervenções urbanas em Aracaju e região." />
+  <meta name="description" content="Estúdio Gecê: arquitetura que resolve problemas reais. Projetos residenciais, comerciais, de interiores e intervenções urbanas em Aracaju e região, por Gabriel Câmara." />
 
-  <!-- Open Graph -->
   <meta property="og:title" content="Estúdio Gecê — Arquitetura e urbanismo" />
   <meta property="og:description" content="Arquitetura que equilibra estética, função, viabilidade e identidade." />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="pt_BR" />
+  <meta property="og:image" content="/assets/img/marca-split.png" />
 
+  <link rel="icon" type="image/png" href="/assets/img/logo-gece-transp.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Montserrat:wght@300;500&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="/assets/css/styles.css" />
+  <script>document.documentElement.classList.add('js');</script>
 </head>
 <body>
 
-  <!-- ===================== HEADER ===================== -->
+  <!-- HEADER -->
   <header class="site-header">
     <div class="wrap site-header__inner">
-      <a class="brand" href="/">
-        Estúdio&nbsp;Gecê <span class="brand__mark">[arq + urb]</span>
+      <a class="brand-logo" href="/" aria-label="Estúdio Gecê — início">
+        <img src="/assets/img/logo-gece-transp.png" alt="Estúdio Gecê" />
       </a>
 
       <button class="nav-toggle" aria-label="Abrir menu" aria-expanded="false">
@@ -43,44 +45,37 @@
 
   <main>
 
-    <!-- ===================== HERO ===================== -->
+    <!-- HERO -->
     <section class="hero">
-      <div class="wrap">
-        <div class="hero__meta">
-          <p class="eyebrow">Estúdio Gecê · Aracaju — SE</p>
-          <p class="eyebrow">Arquitetura · Interiores · Urbanismo</p>
+      <div class="hero__grid">
+        <div class="hero__text">
+          <p class="eyebrow">Arquitetura · Interiores · Urbanismo — Aracaju/SE</p>
+          <h1 class="hero__title">Arquitetura que resolve <em>problemas reais</em>.</h1>
+          <p class="hero__lede">
+            Projetos residenciais e comerciais que equilibram estética, função,
+            viabilidade, durabilidade e a identidade de quem usa o espaço.
+            Decisão técnica, não decoração.
+          </p>
+          <div class="hero__actions">
+            <a class="btn btn--solid" href="#contato">Iniciar um projeto</a>
+            <a class="btn btn--ghost" href="#projetos">Ver projetos</a>
+          </div>
         </div>
-
-        <h1 class="hero__title reveal">
-          Arquitetura que resolve <em>problemas reais</em> e melhora o dia a dia.
-        </h1>
-
-        <p class="hero__lede reveal">
-          Projetos residenciais e comerciais que equilibram estética, função,
-          viabilidade financeira, durabilidade e a identidade de quem vai usar
-          o espaço. Sem excessos decorativos — decisões com motivo.
-        </p>
-
-        <div class="hero__actions reveal">
-          <a class="btn btn--solid" href="#contato">Iniciar um projeto</a>
-          <a class="btn btn--ghost" href="#projetos">Ver projetos</a>
-        </div>
+        <div class="hero__media" role="img" aria-label="Grafismo da marca Estúdio Gecê"></div>
       </div>
     </section>
 
-    <!-- ===================== MANIFESTO ===================== -->
-    <section id="estudio" class="block manifesto">
+    <!-- MANIFESTO -->
+    <section id="estudio" class="block">
       <div class="wrap">
-        <div class="dimline reveal">
-          <span>01 — O estúdio</span>
-          <span class="dimline__rule"></span>
-          <span>Aracaju · SE</span>
+        <div class="manifesto__head reveal">
+          <span class="gable" aria-hidden="true"></span>
+          <p class="eyebrow">O estúdio</p>
         </div>
 
         <div class="manifesto__grid">
           <p class="manifesto__statement reveal">
-            Espaço bem resolvido é o que funciona <b>todos os dias</b> —
-            não só na foto.
+            Espaço bem resolvido é o que funciona <b>todos os dias</b> — não só na foto.
           </p>
           <div class="manifesto__body reveal">
             <p>
@@ -93,193 +88,146 @@
               Atendo dois perfis com a mesma régua técnica: empreendedores que
               precisam de espaços comerciais alinhados à própria marca, e clientes
               residenciais que priorizam conforto, praticidade e valorização do
-              imóvel. A linguagem é direta — projeto é decisão, não decoração.
+              imóvel. A linguagem é direta, do briefing à obra.
             </p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ===================== SERVIÇOS ===================== -->
+    <!-- SERVIÇOS -->
     <section id="servicos" class="block services">
       <div class="wrap">
         <div class="services__head reveal">
           <h2>Serviços</h2>
-          <p class="eyebrow">O que entra no escopo</p>
+          <p class="eyebrow">Do partido ao executivo</p>
         </div>
 
         <div class="services__list reveal">
           <article class="service">
             <span class="service__num">S/01</span>
             <h3>Arquitetura residencial</h3>
-            <p>Projeto completo de casas e apartamentos, do partido à execução,
-               pensando rotina, conforto e valorização do imóvel.</p>
+            <p>Casas e apartamentos, do estudo inicial ao projeto executivo, pensando rotina, conforto e valorização do imóvel.</p>
           </article>
           <article class="service">
             <span class="service__num">S/02</span>
             <h3>Comercial &amp; corporativo</h3>
-            <p>Lojas, escritórios e coworkings que traduzem a marca em espaço e
-               funcionam para o negócio — não só para a fachada.</p>
+            <p>Lojas, escritórios e coworkings que traduzem a marca em espaço e funcionam para o negócio — não só para a fachada.</p>
           </article>
           <article class="service">
             <span class="service__num">S/03</span>
-            <h3>Interiores</h3>
-            <p>Detalhamento de interiores, marcenaria, iluminação e materiais,
-               com foco em uso real e durabilidade.</p>
+            <h3>Interiores &amp; ambientação</h3>
+            <p>Detalhamento completo de interiores:</p>
+            <ul>
+              <li>Marcenaria, marmoraria e tapeçaria</li>
+              <li>Vidraçaria e serralheria</li>
+              <li>Mobiliário, pintura e acabamentos</li>
+              <li>Iluminação e projeto elétrico</li>
+            </ul>
           </article>
           <article class="service">
             <span class="service__num">S/04</span>
             <h3>Urbanismo &amp; intervenções</h3>
-            <p>Requalificação de espaços e intervenções urbanas que conectam o
-               projeto privado ao entorno público.</p>
+            <p>Requalificação de espaços e intervenções urbanas que conectam o projeto privado ao entorno público.</p>
           </article>
         </div>
       </div>
     </section>
 
-    <!-- ===================== PROJETOS ===================== -->
-    <section id="projetos" class="block projects">
+    <!-- FAIXA SPLIT DA MARCA -->
+    <div class="band-split" role="img" aria-label="Grafismo da marca Estúdio Gecê"></div>
+
+    <!-- PROJETOS -->
+    <section id="projetos" class="block">
       <div class="wrap">
         <div class="projects__head reveal">
           <h2>Projetos selecionados</h2>
-          <p class="eyebrow">Substitua pelos seus projetos reais</p>
+          <p class="eyebrow">Substituir pelos projetos reais</p>
         </div>
 
-        <!-- EDITAR: troque tags, títulos, descrições e (depois) imagens.
+        <!-- EDITAR: troque tags, títulos, descrições e imagens.
              Para usar foto: dentro de .card__media coloque
-             <img src="/assets/img/projeto.jpg" alt="…"> e remova o padrão. -->
+             <img src="/assets/img/projeto.jpg" alt="…"> ocupando o bloco. -->
         <div class="grid reveal">
-
           <a class="card" href="#contato">
             <div class="card__media"><span class="card__tag">Comercial</span></div>
-            <div class="card__body">
-              <h3>Projeto comercial 01</h3>
-              <p>Breve descrição do desafio e da solução espacial.</p>
-            </div>
+            <div class="card__body"><h3>Projeto comercial 01</h3><p>Breve descrição do desafio e da solução espacial.</p></div>
           </a>
-
           <a class="card" href="#contato">
             <div class="card__media"><span class="card__tag">Residencial</span></div>
-            <div class="card__body">
-              <h3>Residência 01</h3>
-              <p>Breve descrição do desafio e da solução espacial.</p>
-            </div>
+            <div class="card__body"><h3>Residência 01</h3><p>Breve descrição do desafio e da solução espacial.</p></div>
           </a>
-
           <a class="card" href="#contato">
             <div class="card__media"><span class="card__tag">Interiores</span></div>
-            <div class="card__body">
-              <h3>Interiores 01</h3>
-              <p>Breve descrição do desafio e da solução espacial.</p>
-            </div>
+            <div class="card__body"><h3>Ambientação 01</h3><p>Breve descrição do desafio e da solução espacial.</p></div>
           </a>
-
           <a class="card" href="#contato">
             <div class="card__media"><span class="card__tag">Urbanismo</span></div>
-            <div class="card__body">
-              <h3>Intervenção urbana 01</h3>
-              <p>Breve descrição do desafio e da solução espacial.</p>
-            </div>
+            <div class="card__body"><h3>Intervenção urbana 01</h3><p>Breve descrição do desafio e da solução espacial.</p></div>
           </a>
-
           <a class="card" href="#contato">
             <div class="card__media"><span class="card__tag">Comercial</span></div>
-            <div class="card__body">
-              <h3>Projeto comercial 02</h3>
-              <p>Breve descrição do desafio e da solução espacial.</p>
-            </div>
+            <div class="card__body"><h3>Projeto comercial 02</h3><p>Breve descrição do desafio e da solução espacial.</p></div>
           </a>
-
           <a class="card" href="#contato">
             <div class="card__media"><span class="card__tag">Residencial</span></div>
-            <div class="card__body">
-              <h3>Residência 02</h3>
-              <p>Breve descrição do desafio e da solução espacial.</p>
-            </div>
+            <div class="card__body"><h3>Residência 02</h3><p>Breve descrição do desafio e da solução espacial.</p></div>
           </a>
-
         </div>
       </div>
     </section>
 
-    <!-- ===================== PROCESSO ===================== -->
+    <!-- PROCESSO (etapas reais) -->
     <section id="processo" class="block process">
       <div class="wrap">
-        <div class="dimline reveal">
-          <span>02 — Como trabalho</span>
-          <span class="dimline__rule"></span>
-          <span>Do briefing à obra</span>
+        <div class="manifesto__head reveal">
+          <span class="gable" aria-hidden="true"></span>
+          <p class="eyebrow">Como trabalho</p>
         </div>
-
-        <h2 class="reveal" style="margin-top:24px">Um processo, quatro etapas</h2>
+        <h2 class="reveal" style="margin-top:20px">Do briefing à entrega</h2>
 
         <div class="steps reveal">
           <div class="step">
-            <div class="step__num">ETAPA 01</div>
-            <h3>Briefing</h3>
-            <p>Entendo o problema, o uso, o orçamento e a identidade antes de
-               desenhar qualquer coisa.</p>
+            <div class="step__num">01 — ANTEPROJETO</div>
+            <h3>Estudo e partido</h3>
+            <p>Levantamento de dados, leitura do perfil do cliente e estudo de alternativas até um partido satisfatório. Entrego estudos 3D e planta baixa.</p>
           </div>
           <div class="step">
-            <div class="step__num">ETAPA 02</div>
-            <h3>Partido &amp; estudo</h3>
-            <p>Defino o conceito e testo soluções — sempre amarrando estética
-               a função e viabilidade.</p>
+            <div class="step__num">02 — PROJETO EXECUTIVO</div>
+            <h3>Detalhamento técnico</h3>
+            <p>Plantas ampliadas, vistas por ambiente, detalhes de marcenaria, marmoraria, vidraçaria e serralheria, layout luminotécnico e elétrico, e especificação de acabamentos.</p>
           </div>
           <div class="step">
-            <div class="step__num">ETAPA 03</div>
-            <h3>Projeto executivo</h3>
-            <p>Detalhamento técnico, legalização e tudo que a obra precisa para
-               sair como foi pensada.</p>
-          </div>
-          <div class="step">
-            <div class="step__num">ETAPA 04</div>
-            <h3>Acompanhamento</h3>
-            <p>Apoio na execução para garantir que o projeto vire realidade com
-               qualidade.</p>
+            <div class="step__num">03 — ENTREGA FINAL</div>
+            <h3>Material e acompanhamento</h3>
+            <p>Projeto em formato digital (PDF e DWG) e via impressa, com visitas à obra e a fornecedores para garantir que o projeto saia como foi pensado.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ===================== CONTATO ===================== -->
-    <section id="contato" class="block contact">
+    <!-- CONTATO -->
+    <section id="contato" class="block">
       <div class="wrap">
-        <div class="dimline reveal">
-          <span>03 — Contato</span>
-          <span class="dimline__rule"></span>
-          <span>Resposta direta</span>
+        <div class="manifesto__head reveal">
+          <span class="gable" aria-hidden="true"></span>
+          <p class="eyebrow">Contato</p>
         </div>
 
         <div class="contact__grid">
           <div class="reveal">
-            <h2>Vamos resolver o seu espaço.</h2>
+            <h2>Vamos resolver o seu <em>espaço</em>.</h2>
             <p class="contact__lede">
               Me conte o problema que precisa resolver e o tipo de projeto.
               Retorno de forma direta com os próximos passos.
             </p>
           </div>
 
-          <!-- EDITAR: troque pelos seus contatos reais -->
+          <!-- EDITAR: troque pelos contatos reais -->
           <ul class="contact__list reveal">
-            <li>
-              <a href="mailto:contato@estudiogece.com.br">
-                <span class="label">E-mail</span>
-                <span class="value">contato@estudiogece.com.br</span>
-              </a>
-            </li>
-            <li>
-              <a href="https://wa.me/5579000000000" target="_blank" rel="noopener">
-                <span class="label">WhatsApp</span>
-                <span class="value">(79) 9 0000-0000</span>
-              </a>
-            </li>
-            <li>
-              <a href="https://instagram.com/estudiogece" target="_blank" rel="noopener">
-                <span class="label">Instagram</span>
-                <span class="value">@estudiogece</span>
-              </a>
-            </li>
+            <li><a href="mailto:contato@estudiogece.com.br"><span class="label">E-mail</span><span class="value">contato@estudiogece.com.br</span></a></li>
+            <li><a href="https://wa.me/5579000000000" target="_blank" rel="noopener"><span class="label">WhatsApp</span><span class="value">(79) 9 0000-0000</span></a></li>
+            <li><a href="https://instagram.com/estudiogece" target="_blank" rel="noopener"><span class="label">Instagram</span><span class="value">@estudiogece</span></a></li>
           </ul>
         </div>
       </div>
@@ -287,12 +235,14 @@
 
   </main>
 
-  <!-- ===================== FOOTER ===================== -->
+  <!-- FOOTER -->
   <footer class="site-footer">
     <div class="wrap">
       <div class="site-footer__top">
-        <a class="brand" href="/">Estúdio&nbsp;Gecê</a>
-        <p class="eyebrow" style="color:rgba(244,244,241,.6)">Arquitetura · Interiores · Urbanismo</p>
+        <a class="site-footer__logo" href="/" aria-label="Estúdio Gecê">
+          <img src="/assets/img/logo-gece-branco.png" alt="Estúdio Gecê" />
+        </a>
+        <span class="site-footer__tag">Gabriel Câmara · Arquiteto e Urbanista</span>
       </div>
       <div class="site-footer__legal">
         <span>© <span data-year>2026</span> Estúdio Gecê LTDA · Aracaju/SE</span>

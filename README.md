@@ -1,88 +1,39 @@
-# Estúdio Gecê — Site
+# Estúdio Gecê — Site (v2)
 
-Site institucional/portfólio do Estúdio Gecê. HTML, CSS e JS puros — **sem build, sem dependências**. Roda direto no Cloudflare Pages e atualiza sozinho a cada `git push`.
+Site institucional/portfólio com a identidade real do Estúdio Gecê (bordô + branco, DM Sans + Montserrat, logo e grafismo "g"). HTML, CSS e JS puros — sem build. Roda no Cloudflare Pages/Workers e atualiza a cada `git push`.
 
 ```
-estudio-gece-site/
-├── index.html          # Página principal (portfólio)
-├── 404.html            # Página de erro
-├── admin/
-│   └── index.html      # Área privada (futuro app)
+site/
+├── index.html              # Página principal
+├── 404.html
+├── admin/index.html        # Área privada (futuro app)
 ├── assets/
-│   ├── css/styles.css  # Todo o estilo (cores em variáveis no topo)
-│   └── js/main.js      # Menu mobile + animações
-├── _headers            # Cabeçalhos de segurança (Cloudflare)
-├── robots.txt          # Bloqueia /admin dos buscadores
-└── .gitignore
+│   ├── css/styles.css       # Estilo (cores/fontes no topo, bloco :root)
+│   ├── js/main.js           # Menu mobile + animações
+│   └── img/
+│       ├── logo-gece-transp.png   # Logo bordô (header)
+│       ├── logo-gece-branco.png   # Logo branco (rodapé/fundo bordô)
+│       └── marca-split.png        # Grafismo "g" (hero e faixa)
+├── _headers · robots.txt · .gitignore
 ```
 
----
+## O que falta preencher (marcado com `EDITAR:` no index.html)
+- **Contato:** e-mail, WhatsApp e Instagram reais (seção `#contato`).
+- **Projetos:** títulos, descrições e fotos dos 6 cards. Para usar foto, dentro de
+  `<div class="card__media">` coloque `<img src="/assets/img/projeto1.jpg" alt="...">`
+  ocupando o bloco, e remova a tag `card__tag` se quiser.
 
-## 1. Subir para o GitHub
+## Cores e fontes
+Topo do `assets/css/styles.css`, bloco `:root`:
+- Bordô da marca: `--bordo: #561624`
+- Fontes: DM Sans (texto/títulos) e Montserrat (rótulos)
 
-No terminal, dentro da pasta do projeto:
+## Publicar as atualizações
+Você já tem o site conectado na Cloudflare. Para atualizar:
+1. Substitua o conteúdo do repositório por estes arquivos.
+2. Faça `git push` (ou use o Claude Code: abra-o nesta pasta e peça para
+   commitar e enviar). A Cloudflare republica sozinha em ~1 min.
 
-```bash
-git init
-git add .
-git commit -m "Site inicial do Estúdio Gecê"
-git branch -M main
-git remote add origin https://github.com/SEU-USUARIO/estudio-gece-site.git
-git push -u origin main
-```
-
-(Troque `SEU-USUARIO` pelo seu usuário do GitHub. Crie o repositório vazio antes, em github.com → New repository.)
-
----
-
-## 2. Publicar no Cloudflare Pages
-
-1. Painel da Cloudflare → **Workers & Pages** → **Create** → aba **Pages** → **Connect to Git**.
-2. Autorize o GitHub e selecione o repositório `estudio-gece-site`.
-3. Nas configurações de build, use **exatamente**:
-   - **Framework preset:** `None`
-   - **Build command:** *(deixe em branco)*
-   - **Build output directory:** `/`
-4. **Save and Deploy.**
-
-Em ~1 minuto o site fica no ar em `https://estudio-gece-site.pages.dev`. Cada `git push` para a branch `main` republica automaticamente.
-
-### Domínio próprio
-Se você já tem um domínio na Cloudflare: dentro do projeto Pages → **Custom domains** → **Set up a custom domain** → digite seu domínio. A Cloudflare ajusta o DNS sozinha.
-
----
-
-## 3. Proteger a área `/admin` (importante)
-
-Antes de colocar qualquer dado no `/admin`, tranque o acesso com **Cloudflare Access** (gratuito no plano Zero Trust):
-
-1. Painel Cloudflare → **Zero Trust** → **Access** → **Applications** → **Add an application** → **Self-hosted**.
-2. Domínio da aplicação: seu site, caminho `/admin`.
-3. Em **Policies**, crie uma regra **Allow** com *Include → Emails →* o seu e-mail.
-4. Salve.
-
-A partir daí, só você entra no `/admin` (login por e-mail). Sem isso, a página fica pública.
-
----
-
-## 4. Editar o conteúdo
-
-Tudo é texto — dá pra editar direto no GitHub (lápis ✏️) ou no seu editor.
-
-- **Textos:** edite no `index.html` (procure os comentários `EDITAR:`).
-- **Contatos:** seção `#contato` no `index.html` — troque e-mail, WhatsApp e Instagram.
-- **Projetos:** cada card está marcado. Para usar foto, dentro de `.card__media` coloque
-  `<img src="/assets/img/seu-projeto.jpg" alt="...">` e crie a pasta `assets/img/`.
-- **Cores e fontes:** topo do `assets/css/styles.css`, bloco `:root` (variáveis).
-
----
-
-## 5. Próximo passo — o app no `/admin`
-
-A base já está pronta para virar aplicativo, tudo dentro da Cloudflare:
-
-- **Pages Functions** → back-end (rotas tipo `/api/...`) no mesmo projeto, sem servidor separado.
-- **D1** → banco de dados SQL para guardar clientes, propostas, projetos etc.
-- **Access** → o login que protege o `/admin` (passo 3).
-
-Quando você decidir o que o app vai fazer, monto essa camada. Não precisa trocar nada do que já está aqui.
+## Próximo passo — app no /admin
+Base pronta. Quando definir a função (clientes, propostas, obras), monto a camada
+de back-end na Cloudflare (Functions + banco D1) e o login via Cloudflare Access.
