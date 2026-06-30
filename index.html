@@ -15,7 +15,7 @@
   <link rel="icon" type="image/png" href="/assets/img/logo-gece-transp.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Montserrat:wght@300;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="/assets/css/styles.css" />
   <script>document.documentElement.classList.add('js');</script>
@@ -34,11 +34,11 @@
       </button>
 
       <nav class="nav" aria-label="Principal">
-        <a href="#estudio">Estúdio</a>
-        <a href="#servicos">Serviços</a>
+        <a href="#estudio">Quem somos</a>
         <a href="#projetos">Projetos</a>
         <a href="#processo">Processo</a>
-        <a class="nav__cta" href="#contato">Iniciar projeto</a>
+        <a href="#contato">Contato</a>
+        <a class="nav__cta" href="/orcamento/">Iniciar projeto</a>
       </nav>
     </div>
   </header>
@@ -57,7 +57,7 @@
             Decisão técnica, não decoração.
           </p>
           <div class="hero__actions">
-            <a class="btn btn--solid" href="#contato">Iniciar um projeto</a>
+            <a class="btn btn--solid" href="/orcamento/">Iniciar um projeto</a>
             <a class="btn btn--ghost" href="#projetos">Ver projetos</a>
           </div>
         </div>
@@ -65,71 +65,62 @@
       </div>
     </section>
 
-    <!-- MANIFESTO -->
+    <!-- QUEM SOMOS -->
     <section id="estudio" class="block">
       <div class="wrap">
         <div class="manifesto__head reveal">
           <span class="gable" aria-hidden="true"></span>
-          <p class="eyebrow">O estúdio</p>
+          <p class="eyebrow">Quem somos</p>
         </div>
 
-        <div class="manifesto__grid">
-          <p class="manifesto__statement reveal">
-            Espaço bem resolvido é o que funciona <b>todos os dias</b> — não só na foto.
-          </p>
-          <div class="manifesto__body reveal">
+        <div class="about__grid">
+          <figure class="founder reveal" style="margin:0">
+            <img class="founder__photo" src="/assets/img/gabriel.jpg" alt="Gabriel Câmara, fundador do Estúdio Gecê" />
+            <figcaption class="founder__id">
+              <div class="founder__name">Gabriel Câmara</div>
+              <div class="founder__role">Arquiteto e Urbanista · Fundador</div>
+            </figcaption>
+          </figure>
+
+          <div class="about__text reveal">
+            <p class="about__lead">Muito mais do que projetar espaços, nós criamos o cenário da sua vida.</p>
             <p>
-              O Estúdio Gecê é tocado por Gabriel Câmara, arquiteto e urbanista.
-              Cada projeto parte de um problema concreto: como as pessoas usam o
-              espaço, o orçamento disponível, a obra que vai sair do papel e o
-              valor que isso agrega no longo prazo.
+              Fundado em 2025, em Aracaju, o Estúdio Gecê transforma ideias em ambientes
+              reais e funcionais, com a sua essência. Nosso propósito é descomplicar a
+              arquitetura, independente da tipologia, unindo estética e conforto para
+              materializar os seus sonhos e necessidades.
             </p>
+
+            <h3>Nossa filosofia</h3>
             <p>
-              Atendo dois perfis com a mesma régua técnica: empreendedores que
-              precisam de espaços comerciais alinhados à própria marca, e clientes
-              residenciais que priorizam conforto, praticidade e valorização do
-              imóvel. A linguagem é direta, do briefing à obra.
+              Acreditamos na arquitetura empática e feita a quatro mãos. Entendemos a sua
+              rotina para traduzi-la em projetos inteligentes e totalmente viáveis. Dos
+              primeiros esboços à escolha dos acabamentos, estamos ao seu lado para garantir
+              que a jornada seja leve e o resultado surpreenda.
             </p>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- SERVIÇOS -->
-    <section id="servicos" class="block services">
-      <div class="wrap">
-        <div class="services__head reveal">
-          <h2>Serviços</h2>
-          <p class="eyebrow">Do partido ao executivo</p>
-        </div>
-
-        <div class="services__list reveal">
-          <article class="service">
-            <span class="service__num">S/01</span>
-            <h3>Arquitetura residencial</h3>
-            <p>Casas e apartamentos, do estudo inicial ao projeto executivo, pensando rotina, conforto e valorização do imóvel.</p>
-          </article>
-          <article class="service">
-            <span class="service__num">S/02</span>
-            <h3>Comercial &amp; corporativo</h3>
-            <p>Lojas, escritórios e coworkings que traduzem a marca em espaço e funcionam para o negócio — não só para a fachada.</p>
-          </article>
-          <article class="service">
-            <span class="service__num">S/03</span>
-            <h3>Interiores &amp; ambientação</h3>
-            <p>Detalhamento completo de interiores:</p>
-            <ul>
-              <li>Marcenaria, marmoraria e tapeçaria</li>
-              <li>Vidraçaria e serralheria</li>
-              <li>Mobiliário, pintura e acabamentos</li>
-              <li>Iluminação e projeto elétrico</li>
-            </ul>
-          </article>
-          <article class="service">
-            <span class="service__num">S/04</span>
-            <h3>Urbanismo &amp; intervenções</h3>
-            <p>Requalificação de espaços e intervenções urbanas que conectam o projeto privado ao entorno público.</p>
-          </article>
+        <div class="reveal">
+          <h3 style="font-family:var(--font-display);font-weight:700;font-size:clamp(20px,2.6vw,28px);margin-top:clamp(40px,5vw,64px)">Nossos pilares</h3>
+          <div class="pillars">
+            <div class="pillar">
+              <div class="pillar__top"><span class="gable" aria-hidden="true"></span><h4>Autenticidade</h4></div>
+              <p>Sem fórmulas prontas. Projetos exclusivos, com a sua identidade.</p>
+            </div>
+            <div class="pillar">
+              <div class="pillar__top"><span class="gable" aria-hidden="true"></span><h4>Funcionalidade</h4></div>
+              <p>Espaços práticos que abraçam o seu dia a dia e elevam o bem-estar.</p>
+            </div>
+            <div class="pillar">
+              <div class="pillar__top"><span class="gable" aria-hidden="true"></span><h4>Transparência</h4></div>
+              <p>Confiança, clareza e respeito em todas as etapas da obra ou projeto.</p>
+            </div>
+            <div class="pillar">
+              <div class="pillar__top"><span class="gable" aria-hidden="true"></span><h4>Essência</h4></div>
+              <p>Raízes sergipanas: luz natural, ventilação e leveza valorizadas.</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -221,13 +212,14 @@
               Me conte o problema que precisa resolver e o tipo de projeto.
               Retorno de forma direta com os próximos passos.
             </p>
+            <p style="margin-top:26px"><a class="btn btn--solid" href="/orcamento/">Preencher briefing &amp; pedir orçamento</a></p>
           </div>
 
           <!-- EDITAR: troque pelos contatos reais -->
           <ul class="contact__list reveal">
-            <li><a href="mailto:contato@estudiogece.com.br"><span class="label">E-mail</span><span class="value">contato@estudiogece.com.br</span></a></li>
-            <li><a href="https://wa.me/5579000000000" target="_blank" rel="noopener"><span class="label">WhatsApp</span><span class="value">(79) 9 0000-0000</span></a></li>
-            <li><a href="https://instagram.com/estudiogece" target="_blank" rel="noopener"><span class="label">Instagram</span><span class="value">@estudiogece</span></a></li>
+            <li><a href="mailto:gcamara@estudiogece.com.br"><span class="label">E-mail</span><span class="value">gcamara@estudiogece.com.br</span></a></li>
+            <li><a href="https://wa.me/5579991021377" target="_blank" rel="noopener"><span class="label">WhatsApp</span><span class="value">+55 (79) 99102-1377</span></a></li>
+            <li><a href="https://instagram.com/estudio.gece" target="_blank" rel="noopener"><span class="label">Instagram</span><span class="value">@estudio.gece</span></a></li>
           </ul>
         </div>
       </div>
