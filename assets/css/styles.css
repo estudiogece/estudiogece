@@ -328,6 +328,11 @@ p { margin: 0; }
 .required { color: var(--bordo); }
 .form-alt { font-size: 14px; color: var(--ink-soft); }
 .form-alt a { color: var(--bordo); }
+.form-status { font-size: 15px; margin: 0; min-height: 1.2em; }
+.form-status.is-loading { color: var(--ink-soft); }
+.form-status.is-ok { color: #1b7a3d; font-weight: 600; }
+.form-status.is-error { color: #b3261e; font-weight: 600; }
+.fsubmit .btn:disabled { opacity: .6; cursor: default; transform: none; }
 
 @media (max-width: 940px) {
   .about__grid { grid-template-columns: 1fr; }

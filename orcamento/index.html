@@ -33,8 +33,8 @@
         <p class="eyebrow">Iniciar um projeto</p>
         <h1>Briefing &amp; solicitação de orçamento</h1>
         <p>
-          Responda as perguntas abaixo. Ao final, geramos uma mensagem com tudo organizado
-          que abre direto no nosso WhatsApp — daí retornamos com os próximos passos e o orçamento.
+          Responda as perguntas abaixo e envie. Recebemos o briefing direto por e-mail
+          e retornamos com os próximos passos e o orçamento.
           Os campos com <span class="required">*</span> são essenciais.
         </p>
       </div>
@@ -152,10 +152,14 @@
             </p>
           </div>
 
+          <!-- anti-spam (não preencher) -->
+          <input type="text" name="website" tabindex="-1" autocomplete="off"
+                 style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" aria-hidden="true" />
+
           <!-- ENVIO -->
           <div class="fsubmit">
-            <button type="submit" class="btn btn--solid">Enviar pelo WhatsApp →</button>
-            <p class="form-alt">Prefere e-mail? <a href="#" id="enviar-email">Enviar por e-mail</a>.</p>
+            <button type="submit" class="btn btn--solid">Enviar briefing →</button>
+            <p class="form-status" id="status" role="status" aria-live="polite"></p>
           </div>
 
         </form>
@@ -180,9 +184,9 @@
 
   <script>
     (function () {
-      var WHATS = "5579991021377";
-      var EMAIL = "gcamara@estudiogece.com.br";
       var form = document.getElementById("briefing");
+      var statusEl = document.getElementById("status");
+      var btn = form.querySelector("button[type=submit]");
 
       var y = document.querySelector("[data-year]");
       if (y) y.textContent = new Date().getFullYear();
@@ -196,41 +200,15 @@
         }
         return (el.value || "").trim();
       }
-      function line(label, v) { return label + ": " + (v ? v : "—"); }
 
-      function buildMessage() {
-        var L = [];
-        L.push("*BRIEFING — ESTÚDIO GECÊ*");
-        L.push("");
-        L.push("*1. Contato*");
-        L.push(line("Nome", val("nome")));
-        L.push(line("WhatsApp", val("telefone")));
-        L.push(line("E-mail", val("email")));
-        L.push("");
-        L.push("*2. Imóvel*");
-        L.push(line("Tipo", val("tipo")));
-        L.push(line("Estado", val("estado")));
-        L.push(line("Localização", val("local")));
-        L.push(line("Metragem", val("metragem")));
-        L.push("");
-        L.push("*3. Escopo*");
-        L.push(line("Ambientes", val("ambientes")));
-        L.push(line("Intervenção", val("intervencao")));
-        L.push(line("Possui planta", val("planta")));
-        L.push("");
-        L.push("*4. Prazos e investimento*");
-        L.push(line("Urgência", val("urgencia")));
-        L.push(line("Orçamento (execução)", val("orcamento")));
-        L.push("");
-        L.push("*5. Referências*");
-        L.push(line("Link", val("referencias")));
-        L.push(line("Observações", val("obs")));
-        return L.join("\n");
+      function setStatus(msg, kind) {
+        statusEl.textContent = msg;
+        statusEl.className = "form-status" + (kind ? " is-" + kind : "");
       }
 
       function validate() {
         if (!val("nome") || !val("telefone")) {
-          alert("Por favor, preencha pelo menos o nome e o telefone (WhatsApp).");
+          setStatus("Preencha pelo menos o nome e o telefone.", "error");
           (val("nome") ? form.elements["telefone"] : form.elements["nome"]).focus();
           return false;
         }
@@ -240,17 +218,34 @@
       form.addEventListener("submit", function (e) {
         e.preventDefault();
         if (!validate()) return;
-        var url = "https://wa.me/" + WHATS + "?text=" + encodeURIComponent(buildMessage());
-        window.open(url, "_blank");
-      });
 
-      document.getElementById("enviar-email").addEventListener("click", function (e) {
-        e.preventDefault();
-        if (!validate()) return;
-        var subject = "Briefing de projeto — " + (val("nome") || "novo contato");
-        var url = "mailto:" + EMAIL + "?subject=" + encodeURIComponent(subject) +
-                  "&body=" + encodeURIComponent(buildMessage());
-        window.location.href = url;
+        var data = {};
+        ["nome","telefone","email","tipo","estado","local","metragem","ambientes",
+         "intervencao","planta","urgencia","orcamento","referencias","obs","website"]
+          .forEach(function (n) { data[n] = val(n); });
+
+        btn.disabled = true;
+        setStatus("Enviando…", "loading");
+
+        fetch("/api/orcamento", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(data),
+        })
+          .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok && j.ok, j: j }; }); })
+          .then(function (res) {
+            if (res.ok) {
+              form.reset();
+              setStatus("✓ Briefing enviado! Retornamos em breve. Obrigado.", "ok");
+            } else {
+              btn.disabled = false;
+              setStatus("Não foi possível enviar agora. Tente novamente ou fale pelo WhatsApp (79) 99102-1377.", "error");
+            }
+          })
+          .catch(function () {
+            btn.disabled = false;
+            setStatus("Falha de conexão. Tente novamente ou fale pelo WhatsApp (79) 99102-1377.", "error");
+          });
       });
     })();
   </script>
