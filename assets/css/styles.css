@@ -112,24 +112,24 @@ p { margin: 0; }
 .hero { border-bottom: 1px solid var(--line); }
 .hero__grid {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
+  grid-template-columns: 0.85fr 1.15fr;
   min-height: clamp(440px, 64vh, 620px);
 }
 .hero__text {
-  padding: clamp(48px, 7vw, 96px) var(--gutter) clamp(48px, 7vw, 96px) max(var(--gutter), calc((100vw - var(--maxw))/2 + var(--gutter)));
+  padding: clamp(48px, 7vw, 96px) max(var(--gutter), calc((100vw - var(--maxw))/2 + var(--gutter))) clamp(48px, 7vw, 96px) var(--gutter);
   display: flex; flex-direction: column; justify-content: center; gap: 28px;
 }
 .hero__title {
   font-size: clamp(38px, 5.6vw, 76px);
-  font-weight: 700;
-  max-width: 14ch;
+  font-weight: 600;
+  line-height: 1.05;
+  max-width: 15ch;
 }
-.hero__title em { font-style: normal; color: var(--bordo); font-weight: 800; white-space: nowrap; }
+.hero__title em { display: block; font-style: normal; color: var(--bordo); font-weight: 800; }
 .hero__lede { max-width: 46ch; font-size: clamp(16px, 1.5vw, 19px); color: var(--ink-soft); }
 .hero__actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 6px; }
 .hero__media {
-  background: url("/assets/img/marca-split.png") center/cover no-repeat;
-  background-color: var(--bordo-bright);
+  background: url("/assets/img/grafismo-g.svg") left center / cover no-repeat;
 }
 
 /* Botões */
@@ -178,9 +178,8 @@ p { margin: 0; }
 
 /* Faixa split da marca (divisor) */
 .band-split {
-  height: clamp(180px, 26vw, 320px);
-  background: url("/assets/img/marca-split.png") center/cover no-repeat;
-  background-color: var(--bordo-bright);
+  aspect-ratio: 2498.9 / 878.89;
+  background: url("/assets/img/grafismo-g.svg") center / contain no-repeat;
 }
 
 /* Projetos */
@@ -252,7 +251,7 @@ p { margin: 0; }
 /* Responsivo */
 @media (max-width: 940px) {
   .hero__grid { grid-template-columns: 1fr; }
-  .hero__text { padding-inline: var(--gutter); }
+  .hero__text { padding-inline: var(--gutter); order: -1; }
   .hero__media { min-height: 260px; }
   .manifesto__grid, .contact__grid { grid-template-columns: 1fr; }
   .grid { grid-template-columns: repeat(2, 1fr); }
