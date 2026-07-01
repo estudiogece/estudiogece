@@ -121,10 +121,10 @@ p { margin: 0; }
 }
 .hero__title {
   font-size: clamp(38px, 5.6vw, 76px);
-  font-weight: 800;
+  font-weight: 700;
   max-width: 14ch;
 }
-.hero__title em { font-style: normal; color: var(--bordo); }
+.hero__title em { font-style: normal; color: var(--bordo); font-weight: 800; white-space: nowrap; }
 .hero__lede { max-width: 46ch; font-size: clamp(16px, 1.5vw, 19px); color: var(--ink-soft); }
 .hero__actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 6px; }
 .hero__media {
