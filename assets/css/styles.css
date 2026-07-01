@@ -184,7 +184,7 @@ p { margin: 0; }
 
 /* Projetos */
 .projects__head { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
-.projects__head h2 { font-size: clamp(28px, 4vw, 50px); }
+.projects__head h2 { font-size: clamp(28px, 4vw, 50px); color: var(--bordo); }
 .grid { margin-top: 48px; display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(16px, 2vw, 28px); }
 .card {
   display: block; text-decoration: none; color: inherit;
