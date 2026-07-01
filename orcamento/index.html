@@ -35,7 +35,8 @@
         <p>
           Responda as perguntas abaixo e envie. Recebemos o briefing direto por e-mail
           e retornamos com os próximos passos e o orçamento.
-          Os campos com <span class="required">*</span> são essenciais.
+          Os campos com <span class="required">*</span> são essenciais — o resto ajuda,
+          mas pode deixar em branco.
         </p>
       </div>
     </section>
@@ -44,111 +45,360 @@
       <div class="wrap">
         <form id="briefing" class="fbody" novalidate>
 
-          <!-- 1. CONTATO -->
+          <!-- 1. IDENTIFICAÇÃO -->
           <div class="fsection">
-            <div class="fsection__num"><span>01</span><h2>Dados de contato</h2></div>
+            <div class="fsection__num"><span>01</span><h2>Identificação do solicitante</h2></div>
+
             <div class="field">
               <label>Nome completo <span class="required">*</span></label>
               <input type="text" name="nome" required />
             </div>
             <div class="field">
-              <label>Telefone (WhatsApp) <span class="required">*</span></label>
+              <label>Você é quem vai contratar e decidir?</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="decisor" value="Sim" /><span>Sim</span></label>
+                <label class="opt"><input type="radio" name="decisor" value="Não, sou intermediário" /><span>Não, sou intermediário</span></label>
+                <label class="opt"><input type="radio" name="decisor" value="Decisão compartilhada" /><span>Decisão compartilhada</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>E-mail <span class="required">*</span></label>
+              <input type="email" name="email" placeholder="voce@email.com" required />
+            </div>
+            <div class="field">
+              <label>Telefone / WhatsApp <span class="required">*</span></label>
               <input type="tel" name="telefone" placeholder="(79) 9 0000-0000" required />
             </div>
             <div class="field">
-              <label>E-mail</label>
-              <input type="email" name="email" placeholder="voce@email.com" />
+              <label>Pessoa física ou jurídica?</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="pf_pj" value="Pessoa física (CPF)" /><span>Pessoa física (CPF)</span></label>
+                <label class="opt"><input type="radio" name="pf_pj" value="Pessoa jurídica (CNPJ)" /><span>Pessoa jurídica (CNPJ)</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>CPF ou CNPJ</label>
+              <input type="text" name="documento" />
+            </div>
+            <div class="field">
+              <label>Cidade / UF <span class="required">*</span></label>
+              <input type="text" name="cidade_uf" placeholder="Ex: Aracaju/SE" required />
+            </div>
+            <div class="field">
+              <label>Como conheceu o Estúdio Gecê?</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="origem" value="Instagram" /><span>Instagram</span></label>
+                <label class="opt"><input type="radio" name="origem" value="TikTok" /><span>TikTok</span></label>
+                <label class="opt"><input type="radio" name="origem" value="Indicação" /><span>Indicação</span></label>
+                <label class="opt"><input type="radio" name="origem" value="Google" /><span>Google</span></label>
+                <label class="opt"><input type="radio" name="origem" value="Já é cliente" /><span>Já é cliente</span></label>
+                <label class="opt"><input type="radio" name="origem" value="Outro" /><span>Outro</span></label>
+              </div>
             </div>
           </div>
 
-          <!-- 2. IMÓVEL -->
+          <!-- 2. NATUREZA DO PROJETO -->
           <div class="fsection">
-            <div class="fsection__num"><span>02</span><h2>O imóvel</h2></div>
+            <div class="fsection__num"><span>02</span><h2>Natureza do projeto</h2></div>
+
             <div class="field">
               <label>Tipo de imóvel</label>
               <div class="opts opts--row">
-                <label class="opt"><input type="radio" name="tipo" value="Apartamento" /><span>Apartamento</span></label>
-                <label class="opt"><input type="radio" name="tipo" value="Casa" /><span>Casa</span></label>
-                <label class="opt"><input type="radio" name="tipo" value="Sala Comercial" /><span>Sala Comercial</span></label>
-                <label class="opt"><input type="radio" name="tipo" value="Outro" /><span>Outro</span></label>
+                <label class="opt"><input type="radio" name="tipo_imovel" value="Casa" /><span>Casa</span></label>
+                <label class="opt"><input type="radio" name="tipo_imovel" value="Apartamento" /><span>Apartamento</span></label>
+                <label class="opt"><input type="radio" name="tipo_imovel" value="Loja ou espaço comercial" /><span>Loja ou espaço comercial</span></label>
+                <label class="opt"><input type="radio" name="tipo_imovel" value="Terreno" /><span>Terreno</span></label>
+                <label class="opt"><input type="radio" name="tipo_imovel" value="Outro" /><span>Outro</span></label>
               </div>
             </div>
             <div class="field">
-              <label>O imóvel é</label>
+              <label>O projeto é <span class="required">*</span></label>
               <div class="opts opts--row">
-                <label class="opt"><input type="radio" name="estado" value="Novo / na planta" /><span>Novo / na planta</span></label>
-                <label class="opt"><input type="radio" name="estado" value="Usado (vai precisar de reforma)" /><span>Usado (vai precisar de reforma)</span></label>
+                <label class="opt"><input type="radio" name="perfil" value="Residencial" required /><span>Residencial</span></label>
+                <label class="opt"><input type="radio" name="perfil" value="Comercial" /><span>Comercial</span></label>
               </div>
+              <span class="hint">Isso define as perguntas do programa de necessidades logo abaixo.</span>
             </div>
             <div class="field">
-              <label>Localização (bairro / condomínio)</label>
-              <input type="text" name="local" />
-            </div>
-            <div class="field">
-              <label>Metragem total estimada dos ambientes a projetar</label>
-              <input type="text" name="metragem" placeholder="Ex: 50 m², 120 m²…" />
-              <span class="hint">Se não souber, descreva o tamanho aproximado.</span>
-            </div>
-          </div>
-
-          <!-- 3. ESCOPO -->
-          <div class="fsection">
-            <div class="fsection__num"><span>03</span><h2>O escopo</h2></div>
-            <div class="field">
-              <label>Quais ambientes farão parte do projeto?</label>
-              <textarea name="ambientes" placeholder="Ex: sala integrada com cozinha, 2 quartos, 2 banheiros e varanda."></textarea>
-            </div>
-            <div class="field">
-              <label>Qual nível de intervenção você imagina?</label>
+              <label>Serviços que busca <span class="required">*</span> <span class="hint">(pode marcar mais de um)</span></label>
               <div class="opts">
-                <label class="opt"><input type="radio" name="intervencao" value="Apenas decoração, pintura e marcenaria (sem quebra-quebra)" /><span>Apenas decoração, pintura e marcenaria (sem quebra-quebra)</span></label>
-                <label class="opt"><input type="radio" name="intervencao" value="Reforma média (troca de revestimentos, forro de gesso, iluminação)" /><span>Reforma média (revestimentos, forro de gesso, iluminação)</span></label>
-                <label class="opt"><input type="radio" name="intervencao" value="Reforma pesada (demolição de paredes, mudanças estruturais, hidráulica nova)" /><span>Reforma pesada (demolição, mudanças estruturais, hidráulica nova)</span></label>
-                <label class="opt"><input type="radio" name="intervencao" value="Construção do zero (projeto arquitetônico completo)" /><span>Construção do zero (projeto arquitetônico completo)</span></label>
+                <label class="opt"><input type="checkbox" name="servicos" value="Projeto arquitetônico completo" /><span>Projeto arquitetônico completo</span></label>
+                <label class="opt"><input type="checkbox" name="servicos" value="Reforma" /><span>Reforma</span></label>
+                <label class="opt"><input type="checkbox" name="servicos" value="Interiores" /><span>Interiores</span></label>
+                <label class="opt"><input type="checkbox" name="servicos" value="Paisagismo" /><span>Paisagismo</span></label>
+                <label class="opt"><input type="checkbox" name="servicos" value="Regularização ou aprovação" /><span>Regularização ou aprovação</span></label>
+                <label class="opt"><input type="checkbox" name="servicos" value="Projeto comercial" /><span>Projeto comercial</span></label>
+                <label class="opt"><input type="checkbox" name="servicos" value="Consultoria pontual" /><span>Consultoria pontual</span></label>
               </div>
             </div>
             <div class="field">
-              <label>Você já possui a planta baixa do imóvel?</label>
+              <label>Construção nova ou intervenção em algo existente?</label>
               <div class="opts opts--row">
-                <label class="opt"><input type="radio" name="planta" value="Sim" /><span>Sim</span></label>
-                <label class="opt"><input type="radio" name="planta" value="Não" /><span>Não</span></label>
+                <label class="opt"><input type="radio" name="obra_tipo" value="Construção nova" /><span>Construção nova</span></label>
+                <label class="opt"><input type="radio" name="obra_tipo" value="Reforma ou ampliação" /><span>Reforma ou ampliação</span></label>
+                <label class="opt"><input type="radio" name="obra_tipo" value="Só interiores" /><span>Só interiores</span></label>
+                <label class="opt"><input type="radio" name="obra_tipo" value="Não sei" /><span>Não sei</span></label>
               </div>
             </div>
           </div>
 
-          <!-- 4. PRAZOS E INVESTIMENTO -->
+          <!-- 3. DADOS DO IMÓVEL -->
           <div class="fsection">
-            <div class="fsection__num"><span>04</span><h2>Prazos e investimento</h2></div>
+            <div class="fsection__num"><span>03</span><h2>Dados do imóvel</h2></div>
+
             <div class="field">
-              <label>Qual a sua urgência para o início da obra/projeto?</label>
-              <input type="text" name="urgencia" placeholder="Ex: o quanto antes, em 3 meses, sem pressa…" />
+              <label>Endereço ou localização (bairro / cidade)</label>
+              <input type="text" name="endereco" />
             </div>
             <div class="field">
-              <label>Estimativa de orçamento reservado para a <strong>execução</strong> da obra/reforma</label>
+              <label>Situação do imóvel</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="situacao_imovel" value="Próprio" /><span>Próprio</span></label>
+                <label class="opt"><input type="radio" name="situacao_imovel" value="Alugado" /><span>Alugado</span></label>
+                <label class="opt"><input type="radio" name="situacao_imovel" value="Em compra" /><span>Em compra</span></label>
+                <label class="opt"><input type="radio" name="situacao_imovel" value="Ainda vou adquirir" /><span>Ainda vou adquirir</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>Área do terreno (m²)</label>
+              <input type="text" name="area_terreno" inputmode="decimal" />
+            </div>
+            <div class="field">
+              <label>Área construída (m²)</label>
+              <input type="text" name="area_construida" inputmode="decimal" />
+            </div>
+            <div class="field">
+              <label>Estágio atual</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="estagio" value="Terreno vazio" /><span>Terreno vazio</span></label>
+                <label class="opt"><input type="radio" name="estagio" value="Em obra" /><span>Em obra</span></label>
+                <label class="opt"><input type="radio" name="estagio" value="Construído e vazio" /><span>Construído e vazio</span></label>
+                <label class="opt"><input type="radio" name="estagio" value="Construído e habitado" /><span>Construído e habitado</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>Imóvel regularizado?</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="regularizado" value="Sim" /><span>Sim</span></label>
+                <label class="opt"><input type="radio" name="regularizado" value="Não" /><span>Não</span></label>
+                <label class="opt"><input type="radio" name="regularizado" value="Não sei" /><span>Não sei</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>Possui projeto ou planta existente?</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="possui_planta" value="Sim" /><span>Sim</span></label>
+                <label class="opt"><input type="radio" name="possui_planta" value="Não" /><span>Não</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>Fica em condomínio com normas?</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="condominio" value="Sim" /><span>Sim</span></label>
+                <label class="opt"><input type="radio" name="condominio" value="Não" /><span>Não</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>Número de pavimentos (atuais ou desejados)</label>
+              <input type="text" name="pavimentos" />
+            </div>
+          </div>
+
+          <!-- 4R. PROGRAMA — RESIDENCIAL -->
+          <div class="fsection cond cond--res" data-perfil="Residencial">
+            <div class="fsection__num"><span>04</span><h2>Programa de necessidades — Residencial</h2></div>
+
+            <div class="field">
+              <label>Quantas pessoas vão morar? (adultos, crianças, idosos)</label>
+              <input type="text" name="res_moradores" />
+            </div>
+            <div class="field">
+              <label>Há pets? Quais?</label>
+              <input type="text" name="res_pets" />
+            </div>
+            <div class="field">
+              <label>Quantos quartos? Quantos em suíte?</label>
+              <input type="text" name="res_quartos" />
+            </div>
+            <div class="field">
+              <label>Ambientes desejados <span class="hint">(pode marcar mais de um)</span></label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="checkbox" name="res_ambientes" value="Sala de estar" /><span>Sala de estar</span></label>
+                <label class="opt"><input type="checkbox" name="res_ambientes" value="Sala de jantar" /><span>Sala de jantar</span></label>
+                <label class="opt"><input type="checkbox" name="res_ambientes" value="Cozinha integrada" /><span>Cozinha integrada</span></label>
+                <label class="opt"><input type="checkbox" name="res_ambientes" value="Home office" /><span>Home office</span></label>
+                <label class="opt"><input type="checkbox" name="res_ambientes" value="Lavabo" /><span>Lavabo</span></label>
+                <label class="opt"><input type="checkbox" name="res_ambientes" value="Área gourmet" /><span>Área gourmet</span></label>
+                <label class="opt"><input type="checkbox" name="res_ambientes" value="Churrasqueira" /><span>Churrasqueira</span></label>
+                <label class="opt"><input type="checkbox" name="res_ambientes" value="Piscina" /><span>Piscina</span></label>
+                <label class="opt"><input type="checkbox" name="res_ambientes" value="Área de serviço" /><span>Área de serviço</span></label>
+                <label class="opt"><input type="checkbox" name="res_ambientes" value="Closet" /><span>Closet</span></label>
+                <label class="opt"><input type="checkbox" name="res_ambientes" value="Despensa" /><span>Despensa</span></label>
+                <label class="opt"><input type="checkbox" name="res_ambientes" value="Espaço pet" /><span>Espaço pet</span></label>
+                <label class="opt"><input type="checkbox" name="res_ambientes" value="Home theater" /><span>Home theater</span></label>
+                <label class="opt"><input type="checkbox" name="res_ambientes" value="Academia" /><span>Academia</span></label>
+                <label class="opt"><input type="checkbox" name="res_ambientes" value="Outro" /><span>Outro</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>Necessidades de acessibilidade ou mobilidade?</label>
+              <input type="text" name="res_acessibilidade" />
+            </div>
+            <div class="field">
+              <label>O que mais te incomoda no imóvel ou em como você mora hoje?</label>
+              <textarea name="res_incomodo"></textarea>
+            </div>
+            <div class="field">
+              <label>O que é inegociável neste projeto?</label>
+              <textarea name="res_inegociavel"></textarea>
+            </div>
+            <div class="field">
+              <label>Estilo / referências (descrição ou links)</label>
+              <textarea name="res_estilo"></textarea>
+            </div>
+          </div>
+
+          <!-- 4C. PROGRAMA — COMERCIAL -->
+          <div class="fsection cond cond--com" data-perfil="Comercial" hidden>
+            <div class="fsection__num"><span>04</span><h2>Programa de necessidades — Comercial</h2></div>
+
+            <div class="field">
+              <label>Qual o ramo do negócio?</label>
+              <input type="text" name="com_ramo" />
+            </div>
+            <div class="field">
+              <label>Quantos funcionários / postos de trabalho?</label>
+              <input type="text" name="com_funcionarios" />
+            </div>
+            <div class="field">
+              <label>Atende público presencialmente?</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="com_publico" value="Sim, loja/PDV" /><span>Sim, loja/PDV</span></label>
+                <label class="opt"><input type="radio" name="com_publico" value="Não, escritório" /><span>Não, escritório</span></label>
+                <label class="opt"><input type="radio" name="com_publico" value="Misto" /><span>Misto</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>Ambientes necessários <span class="hint">(pode marcar mais de um)</span></label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="checkbox" name="com_ambientes" value="Atendimento" /><span>Atendimento</span></label>
+                <label class="opt"><input type="checkbox" name="com_ambientes" value="Vitrine" /><span>Vitrine</span></label>
+                <label class="opt"><input type="checkbox" name="com_ambientes" value="Estoque" /><span>Estoque</span></label>
+                <label class="opt"><input type="checkbox" name="com_ambientes" value="Copa" /><span>Copa</span></label>
+                <label class="opt"><input type="checkbox" name="com_ambientes" value="Banheiros" /><span>Banheiros</span></label>
+                <label class="opt"><input type="checkbox" name="com_ambientes" value="Sala de reunião" /><span>Sala de reunião</span></label>
+                <label class="opt"><input type="checkbox" name="com_ambientes" value="Recepção" /><span>Recepção</span></label>
+                <label class="opt"><input type="checkbox" name="com_ambientes" value="Postos de trabalho" /><span>Postos de trabalho</span></label>
+                <label class="opt"><input type="checkbox" name="com_ambientes" value="Depósito" /><span>Depósito</span></label>
+                <label class="opt"><input type="checkbox" name="com_ambientes" value="Outro" /><span>Outro</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>O espaço precisa comunicar a marca? Já há branding definido?</label>
+              <textarea name="com_marca"></textarea>
+            </div>
+            <div class="field">
+              <label>Ponto já definido ou ainda escolhendo?</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="com_ponto" value="Definido" /><span>Definido</span></label>
+                <label class="opt"><input type="radio" name="com_ponto" value="Escolhendo" /><span>Escolhendo</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>O que é inegociável neste projeto?</label>
+              <textarea name="com_inegociavel"></textarea>
+            </div>
+            <div class="field">
+              <label>Referências de espaços que admira (descrição ou links)</label>
+              <textarea name="com_referencias"></textarea>
+            </div>
+          </div>
+
+          <!-- 5. PRAZO, INVESTIMENTO E EXPECTATIVAS -->
+          <div class="fsection">
+            <div class="fsection__num"><span>05</span><h2>Prazo, investimento e expectativas</h2></div>
+
+            <div class="field">
+              <label>Quando pretende iniciar o projeto?</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="inicio_projeto" value="Imediato" /><span>Imediato</span></label>
+                <label class="opt"><input type="radio" name="inicio_projeto" value="1–3 meses" /><span>1–3 meses</span></label>
+                <label class="opt"><input type="radio" name="inicio_projeto" value="3–6 meses" /><span>3–6 meses</span></label>
+                <label class="opt"><input type="radio" name="inicio_projeto" value="Sem data" /><span>Sem data</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>Quando pretende iniciar a obra?</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="inicio_obra" value="Imediato" /><span>Imediato</span></label>
+                <label class="opt"><input type="radio" name="inicio_obra" value="6 meses" /><span>6 meses</span></label>
+                <label class="opt"><input type="radio" name="inicio_obra" value="1 ano" /><span>1 ano</span></label>
+                <label class="opt"><input type="radio" name="inicio_obra" value="Sem data" /><span>Sem data</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>Já tem verba prevista para o projeto?</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="verba" value="Sim" /><span>Sim</span></label>
+                <label class="opt"><input type="radio" name="verba" value="Ainda não" /><span>Ainda não</span></label>
+                <label class="opt"><input type="radio" name="verba" value="Discutir na proposta" /><span>Discutir na proposta</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>Faixa de investimento prevista para a obra</label>
               <div class="opts">
-                <label class="opt"><input type="radio" name="orcamento" value="Até R$ 30.000" /><span>Até R$ 30.000</span></label>
-                <label class="opt"><input type="radio" name="orcamento" value="De R$ 30.000 a R$ 100.000" /><span>De R$ 30.000 a R$ 100.000</span></label>
-                <label class="opt"><input type="radio" name="orcamento" value="De R$ 100.000 a R$ 500.000" /><span>De R$ 100.000 a R$ 500.000</span></label>
-                <label class="opt"><input type="radio" name="orcamento" value="Acima de R$ 500.000" /><span>Acima de R$ 500.000</span></label>
+                <label class="opt"><input type="radio" name="investimento" value="Até R$ 100 mil" /><span>Até R$ 100 mil</span></label>
+                <label class="opt"><input type="radio" name="investimento" value="De R$ 100 mil a R$ 300 mil" /><span>De R$ 100 mil a R$ 300 mil</span></label>
+                <label class="opt"><input type="radio" name="investimento" value="De R$ 300 mil a R$ 700 mil" /><span>De R$ 300 mil a R$ 700 mil</span></label>
+                <label class="opt"><input type="radio" name="investimento" value="Acima de R$ 700 mil" /><span>Acima de R$ 700 mil</span></label>
               </div>
               <span class="hint">Ajuda a alinhar as soluções do projeto à sua realidade financeira.</span>
             </div>
+            <div class="field">
+              <label>Executar de uma vez ou por etapas?</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="execucao" value="Uma vez" /><span>Uma vez</span></label>
+                <label class="opt"><input type="radio" name="execucao" value="Etapas" /><span>Etapas</span></label>
+                <label class="opt"><input type="radio" name="execucao" value="Não sei" /><span>Não sei</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>Já trabalhou com arquiteto antes?</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="ja_arquiteto" value="Sim" /><span>Sim</span></label>
+                <label class="opt"><input type="radio" name="ja_arquiteto" value="Não" /><span>Não</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>Nível de urgência</label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="radio" name="urgencia" value="Alta" /><span>Alta</span></label>
+                <label class="opt"><input type="radio" name="urgencia" value="Média" /><span>Média</span></label>
+                <label class="opt"><input type="radio" name="urgencia" value="Baixa" /><span>Baixa</span></label>
+              </div>
+            </div>
           </div>
 
-          <!-- 5. APOIO -->
+          <!-- 6. FINALIZAÇÃO -->
           <div class="fsection">
-            <div class="fsection__num"><span>05</span><h2>Arquivos de apoio</h2></div>
+            <div class="fsection__num"><span>06</span><h2>Finalização</h2></div>
+
             <div class="field">
-              <label>Link da sua pasta de referências (Pinterest, Drive…)</label>
-              <input type="url" name="referencias" placeholder="https://…" />
+              <label>Algo mais importante que eu deva saber?</label>
+              <textarea name="algo_mais"></textarea>
             </div>
             <div class="field">
-              <label>Observações</label>
-              <textarea name="obs" placeholder="Algo a mais que queira nos contar?"></textarea>
+              <label>Melhor disponibilidade para reunião, se avançar <span class="hint">(pode marcar mais de um)</span></label>
+              <div class="opts opts--row">
+                <label class="opt"><input type="checkbox" name="disponibilidade" value="Manhã" /><span>Manhã</span></label>
+                <label class="opt"><input type="checkbox" name="disponibilidade" value="Tarde" /><span>Tarde</span></label>
+                <label class="opt"><input type="checkbox" name="disponibilidade" value="Noite" /><span>Noite</span></label>
+                <label class="opt"><input type="checkbox" name="disponibilidade" value="Fim de semana" /><span>Fim de semana</span></label>
+              </div>
             </div>
             <p class="fnote">
-              📎 <strong>Fotos do espaço e a planta do imóvel:</strong> depois de enviar este resumo,
-              é só anexar as imagens direto na conversa do WhatsApp que vai abrir.
+              📎 <strong>Plantas, fotos e referências:</strong> depois de enviar este briefing,
+              retornamos o contato e você anexa os arquivos direto na conversa.
             </p>
           </div>
 
@@ -191,14 +441,30 @@
       var y = document.querySelector("[data-year]");
       if (y) y.textContent = new Date().getFullYear();
 
-      function val(name) {
-        var el = form.elements[name];
-        if (!el) return "";
-        if (el.length && el[0] && el[0].type === "radio") {
-          for (var i = 0; i < el.length; i++) if (el[i].checked) return el[i].value;
-          return "";
-        }
-        return (el.value || "").trim();
+      // --- Mostra/esconde o programa de necessidades conforme Residencial/Comercial ---
+      var conds = [].slice.call(form.querySelectorAll(".cond"));
+      function updatePerfil() {
+        var sel = form.querySelector('input[name="perfil"]:checked');
+        var perfil = sel ? sel.value : null;
+        conds.forEach(function (el) {
+          el.hidden = perfil ? el.getAttribute("data-perfil") !== perfil : true;
+        });
+      }
+      form.querySelectorAll('input[name="perfil"]').forEach(function (r) {
+        r.addEventListener("change", updatePerfil);
+      });
+      updatePerfil();
+
+      // --- Coleta todos os campos (checkbox vira lista) ---
+      function serialize() {
+        var data = {};
+        var fd = new FormData(form);
+        fd.forEach(function (_, key) {
+          if (key in data) return;
+          var all = fd.getAll(key);
+          data[key] = all.length > 1 ? all : all[0];
+        });
+        return data;
       }
 
       function setStatus(msg, kind) {
@@ -206,10 +472,17 @@
         statusEl.className = "form-status" + (kind ? " is-" + kind : "");
       }
 
-      function validate() {
-        if (!val("nome") || !val("telefone")) {
-          setStatus("Preencha pelo menos o nome e o telefone.", "error");
-          (val("nome") ? form.elements["telefone"] : form.elements["nome"]).focus();
+      function validate(d) {
+        if (!d.nome || !d.email || !d.telefone || !d.cidade_uf) {
+          setStatus("Preencha nome, e-mail, telefone e cidade/UF.", "error");
+          return false;
+        }
+        if (!d.perfil) {
+          setStatus("Escolha se o projeto é Residencial ou Comercial.", "error");
+          return false;
+        }
+        if (!d.servicos) {
+          setStatus("Marque pelo menos um serviço que você busca.", "error");
           return false;
         }
         return true;
@@ -217,12 +490,11 @@
 
       form.addEventListener("submit", function (e) {
         e.preventDefault();
-        if (!validate()) return;
-
-        var data = {};
-        ["nome","telefone","email","tipo","estado","local","metragem","ambientes",
-         "intervencao","planta","urgencia","orcamento","referencias","obs","website"]
-          .forEach(function (n) { data[n] = val(n); });
+        var data = serialize();
+        if (!validate(data)) {
+          statusEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          return;
+        }
 
         btn.disabled = true;
         setStatus("Enviando…", "loading");
@@ -232,10 +504,15 @@
           headers: { "content-type": "application/json" },
           body: JSON.stringify(data),
         })
-          .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok && j.ok, j: j }; }); })
+          .then(function (r) {
+            return r.json().catch(function () { return {}; }).then(function (j) {
+              return { ok: r.ok && j.ok };
+            });
+          })
           .then(function (res) {
             if (res.ok) {
               form.reset();
+              updatePerfil();
               setStatus("✓ Briefing enviado! Retornamos em breve. Obrigado.", "ok");
             } else {
               btn.disabled = false;
