@@ -266,7 +266,7 @@ p { margin: 0; }
 .site-footer { background: var(--bordo); color: var(--white); }
 .site-footer .wrap { padding-block: 56px; }
 .site-footer__top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 24px; align-items: center; }
-.site-footer__logo img { height: 40px; width: auto; }
+.site-footer__logo img { height: 64px; width: auto; }
 .site-footer__tag { font-family: var(--font-label); font-weight: 300; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,.7); }
 .site-footer__legal {
   margin-top: 40px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,.18);
