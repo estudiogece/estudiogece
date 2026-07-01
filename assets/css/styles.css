@@ -227,10 +227,11 @@ p { margin: 0; }
   transition: opacity .3s ease;
 }
 .project-item__hovertitle {
-  position: absolute; left: clamp(20px, 3vw, 34px); bottom: clamp(20px, 3vw, 30px); z-index: 2;
+  position: absolute; left: clamp(20px, 3vw, 40px); bottom: clamp(20px, 3vw, 34px); z-index: 2;
   color: #fff; font-family: var(--font-display); font-weight: 800;
-  font-size: clamp(24px, 3.2vw, 40px); line-height: 1.05; letter-spacing: -0.02em;
-  max-width: 80%; opacity: 0; transform: translateY(10px);
+  font-size: clamp(34px, 5.4vw, 68px); line-height: 0.98; letter-spacing: -0.01em;
+  text-transform: uppercase; text-align: left; width: min-content;
+  opacity: 0; transform: translateY(10px);
   transition: opacity .3s ease, transform .3s ease; pointer-events: none;
 }
 .project-item__media .card__tag { transition: opacity .3s ease; }
