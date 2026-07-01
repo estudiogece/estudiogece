@@ -109,7 +109,7 @@ p { margin: 0; }
 .nav-toggle { display: none; }
 
 /* Hero — composição split da marca */
-.hero { border-bottom: 1px solid var(--line); }
+.hero { background: #611120; color: #fff; overflow: hidden; }
 .hero__grid {
   display: grid;
   grid-template-columns: 0.85fr 1.15fr;
@@ -124,12 +124,20 @@ p { margin: 0; }
   font-weight: 600;
   line-height: 1.05;
   max-width: 15ch;
+  color: #fff;
 }
-.hero__title em { display: block; font-style: normal; color: var(--bordo); font-weight: 800; }
-.hero__lede { max-width: 46ch; font-size: clamp(16px, 1.5vw, 19px); color: var(--ink-soft); }
+.hero__title em { display: block; font-style: normal; color: #fff; font-weight: 800; }
+.hero__lede { max-width: 46ch; font-size: clamp(16px, 1.5vw, 19px); color: rgba(255,255,255,0.82); }
+.hero .eyebrow { color: rgba(255,255,255,0.72); }
 .hero__actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 6px; }
+.hero .btn { border-color: #fff; }
+.hero .btn--solid { background: #fff; color: var(--bordo); }
+.hero .btn--solid:hover { background: rgba(255,255,255,0.88); border-color: rgba(255,255,255,0.88); }
+.hero .btn--ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,0.55); }
+.hero .btn--ghost:hover { background: #fff; color: var(--bordo); border-color: #fff; }
 .hero__media {
-  background: url("/assets/img/grafismo-g.svg") left center / cover no-repeat;
+  background: url("/assets/img/selo-branca.svg") center / contain no-repeat;
+  padding: clamp(24px, 4vw, 60px);
 }
 
 /* Botões */
