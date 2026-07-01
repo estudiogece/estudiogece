@@ -52,7 +52,7 @@ a:focus-visible, button:focus-visible {
 
 /* Layout */
 .wrap { width: 100%; max-width: var(--maxw); margin-inline: auto; padding-inline: var(--gutter); }
-.block { padding-block: clamp(72px, 11vw, 136px); }
+.block { padding-block: clamp(44px, 6vw, 84px); }
 
 /* Tipografia base */
 .eyebrow {
@@ -76,13 +76,10 @@ p { margin: 0; }
 /* Marcador "telhado" (circunflexo do ê) — assinatura arquitetônica */
 .gable {
   display: inline-block;
-  width: 16px; height: 9px;
-  border: 2px solid var(--bordo);
-  border-bottom: 0; border-right: 0;
-  transform: rotate(45deg);
-  transform-origin: bottom left;
-  margin-right: 18px;
-  position: relative; top: -3px;
+  width: 20px; height: 20px;
+  background: url("/assets/img/selo-fullcolor.svg") left center / contain no-repeat;
+  margin-right: 12px;
+  vertical-align: middle;
 }
 
 /* Header */
