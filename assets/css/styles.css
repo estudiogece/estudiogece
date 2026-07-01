@@ -32,6 +32,7 @@ html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
+  overflow-x: hidden;
   background: var(--white);
   color: var(--ink);
   font-family: var(--font-body);
@@ -183,12 +184,6 @@ p { margin: 0; }
 .service p { color: var(--ink-soft); font-size: 15.5px; }
 .service ul { margin: 4px 0 0; padding-left: 18px; color: var(--ink-soft); font-size: 14.5px; }
 .service li { margin-bottom: 3px; }
-
-/* Faixa split da marca (divisor) */
-.band-split {
-  aspect-ratio: 2498.9 / 878.89;
-  background: url("/assets/img/grafismo-g.svg") center / contain no-repeat;
-}
 
 /* Projetos */
 .projects__head { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
