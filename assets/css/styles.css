@@ -120,23 +120,22 @@ p { margin: 0; }
   display: flex; flex-direction: column; justify-content: center; gap: 28px;
 }
 .hero__title {
-  font-size: clamp(38px, 5.6vw, 76px);
+  font-size: clamp(34px, 4.6vw, 58px);
   font-weight: 600;
-  line-height: 1.05;
-  max-width: 15ch;
+  line-height: 1.08;
+  max-width: 24ch;
   color: #fff;
 }
-.hero__title em { display: block; font-style: normal; color: #fff; font-weight: 800; }
+.hero__title em { font-style: normal; color: #fff; font-weight: 800; }
 .hero__lede { max-width: 46ch; font-size: clamp(16px, 1.5vw, 19px); color: rgba(255,255,255,0.82); }
 .hero .eyebrow { color: rgba(255,255,255,0.72); }
 .hero__actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 6px; }
-.hero .btn { border-color: #fff; }
-.hero .btn--solid { background: #fff; color: var(--bordo); }
-.hero .btn--solid:hover { background: rgba(255,255,255,0.88); border-color: rgba(255,255,255,0.88); }
-.hero .btn--ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,0.55); }
-.hero .btn--ghost:hover { background: #fff; color: var(--bordo); border-color: #fff; }
+.hero .btn--solid { background: #132e59; color: #fff; border-color: #132e59; }
+.hero .btn--solid:hover { background: #0e2242; border-color: #0e2242; }
+.hero .btn--ghost { background: #fff; color: var(--bordo); border-color: #fff; }
+.hero .btn--ghost:hover { background: rgba(255,255,255,0.88); border-color: rgba(255,255,255,0.88); }
 .hero__media {
-  background: url("/assets/img/selo-branca.svg") center / contain no-repeat;
+  background: url("/assets/img/reduzida-branca.svg") center / contain no-repeat;
   padding: clamp(24px, 4vw, 60px);
 }
 
