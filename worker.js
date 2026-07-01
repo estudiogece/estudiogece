@@ -1,6 +1,6 @@
-// Cloudflare Pages Function — recebe o briefing e envia por e-mail via Resend.
-// Rota: POST /api/orcamento
-// Requer a variável de ambiente RESEND_API_KEY (configurada no painel do Cloudflare Pages).
+// Worker do Estúdio Gecê — serve o site estático (binding ASSETS) e trata a API.
+// Rota de API: POST /api/orcamento -> envia o briefing por e-mail via Resend.
+// Requer o secret RESEND_API_KEY (configurado no painel do Worker).
 
 const DESTINO = "gcamara@estudiogece.com.br";
 // Remetente precisa usar um domínio verificado no Resend.
@@ -29,13 +29,14 @@ function esc(s) {
   );
 }
 
-export async function onRequestPost({ request, env }) {
-  const json = (obj, status = 200) =>
-    new Response(JSON.stringify(obj), {
-      status,
-      headers: { "content-type": "application/json" },
-    });
+function json(obj, status = 200) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
 
+async function handleOrcamento(request, env) {
   try {
     if (!env.RESEND_API_KEY) {
       return json({ ok: false, error: "Configuração de envio ausente." }, 500);
@@ -62,9 +63,7 @@ export async function onRequestPost({ request, env }) {
         `<tr><td style="padding:6px 12px;color:#561624;font-weight:600;white-space:nowrap;vertical-align:top">${label}</td><td style="padding:6px 12px">${esc(data[k]) || "—"}</td></tr>`
     ).join("");
 
-    const linhasTxt = CAMPOS.map(
-      ([k, label]) => `${label}: ${data[k] || "—"}`
-    ).join("\n");
+    const linhasTxt = CAMPOS.map(([k, label]) => `${label}: ${data[k] || "—"}`).join("\n");
 
     const html = `
       <div style="font-family:system-ui,Arial,sans-serif;max-width:640px">
@@ -98,3 +97,17 @@ export async function onRequestPost({ request, env }) {
     return json({ ok: false, error: "Erro inesperado." }, 500);
   }
 }
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    if (url.pathname === "/api/orcamento") {
+      if (request.method !== "POST") {
+        return json({ ok: false, error: "Método não permitido." }, 405);
+      }
+      return handleOrcamento(request, env);
+    }
+    // Todo o restante é servido pelo site estático.
+    return env.ASSETS.fetch(request);
+  },
+};
