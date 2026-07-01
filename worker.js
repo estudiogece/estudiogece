@@ -2,7 +2,7 @@
 // Rota de API: POST /api/orcamento -> envia o briefing por e-mail via Resend.
 // Requer o secret RESEND_API_KEY (configurado no painel do Worker).
 
-const DESTINO = "gcamara@estudiogece.com.br";
+const DESTINO = "falecom@estudiogece.com.br";
 // Remetente precisa usar um domínio verificado no Resend.
 const REMETENTE = "Briefing Estúdio Gecê <briefing@estudiogece.com.br>";
 
