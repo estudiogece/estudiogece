@@ -310,7 +310,7 @@ p { margin: 0; }
 /* ========== QUEM SOMOS / FUNDADOR ========== */
 .about__grid { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: clamp(28px, 5vw, 72px); margin-top: 32px; align-items: stretch; }
 .founder { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--white); }
-.founder__photo { width: 100%; flex: 1 1 auto; min-height: 0; aspect-ratio: auto; object-fit: cover; object-position: center 20%; display: block; }
+.founder__photo { width: 100%; flex: 1 1 auto; min-height: 0; aspect-ratio: auto; object-fit: cover; object-position: center 8%; display: block; }
 .founder__id { padding: 22px 24px; border-top: 1px solid var(--line); }
 .founder__name { font-family: var(--font-display); font-weight: 800; font-size: 22px; letter-spacing: -0.01em; }
 .founder__role { font-family: var(--font-label); font-weight: 500; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--bordo); margin-top: 6px; }
