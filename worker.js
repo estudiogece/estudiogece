@@ -6,27 +6,84 @@ const DESTINO = "gcamara@estudiogece.com.br";
 // Remetente precisa usar um domínio verificado no Resend.
 const REMETENTE = "Briefing Estúdio Gecê <briefing@estudiogece.com.br>";
 
-const CAMPOS = [
-  ["nome", "Nome"],
-  ["telefone", "WhatsApp"],
-  ["email", "E-mail"],
-  ["tipo", "Tipo de imóvel"],
-  ["estado", "Estado do imóvel"],
-  ["local", "Localização"],
-  ["metragem", "Metragem"],
-  ["ambientes", "Ambientes"],
-  ["intervencao", "Nível de intervenção"],
-  ["planta", "Possui planta"],
-  ["urgencia", "Urgência"],
-  ["orcamento", "Orçamento (execução)"],
-  ["referencias", "Link de referências"],
-  ["obs", "Observações"],
+// Seções fixas (na ordem). A Seção 4 (programa de necessidades) é condicional.
+const SECOES = [
+  ["1. Identificação do solicitante", [
+    ["nome", "Nome completo"],
+    ["decisor", "É quem contrata/decide?"],
+    ["email", "E-mail"],
+    ["telefone", "Telefone / WhatsApp"],
+    ["pf_pj", "Pessoa física / jurídica"],
+    ["documento", "CPF / CNPJ"],
+    ["cidade_uf", "Cidade / UF"],
+    ["origem", "Como conheceu o Estúdio"],
+  ]],
+  ["2. Natureza do projeto", [
+    ["tipo_imovel", "Tipo de imóvel"],
+    ["perfil", "O projeto é"],
+    ["servicos", "Serviços que busca"],
+    ["obra_tipo", "Construção nova / intervenção"],
+  ]],
+  ["3. Dados do imóvel", [
+    ["endereco", "Endereço / localização"],
+    ["situacao_imovel", "Situação do imóvel"],
+    ["area_terreno", "Área do terreno (m²)"],
+    ["area_construida", "Área construída (m²)"],
+    ["estagio", "Estágio atual"],
+    ["regularizado", "Regularizado?"],
+    ["possui_planta", "Possui projeto/planta?"],
+    ["condominio", "Condomínio com normas?"],
+    ["pavimentos", "Pavimentos (atuais/desejados)"],
+  ]],
+];
+
+const SECAO_RES = ["4. Programa de necessidades — Residencial", [
+  ["res_moradores", "Quem vai morar (adultos/crianças/idosos)"],
+  ["res_pets", "Pets"],
+  ["res_quartos", "Quartos (e suítes)"],
+  ["res_ambientes", "Ambientes desejados"],
+  ["res_acessibilidade", "Acessibilidade / mobilidade"],
+  ["res_incomodo", "O que mais incomoda hoje"],
+  ["res_inegociavel", "Inegociável no projeto"],
+  ["res_estilo", "Estilo / referências"],
+]];
+
+const SECAO_COM = ["4. Programa de necessidades — Comercial", [
+  ["com_ramo", "Ramo do negócio"],
+  ["com_funcionarios", "Funcionários / postos"],
+  ["com_publico", "Atende público presencialmente?"],
+  ["com_ambientes", "Ambientes necessários"],
+  ["com_marca", "Comunicar a marca / branding"],
+  ["com_ponto", "Ponto definido?"],
+  ["com_inegociavel", "Inegociável no projeto"],
+  ["com_referencias", "Referências"],
+]];
+
+const SECOES_FIM = [
+  ["5. Prazo, investimento e expectativas", [
+    ["inicio_projeto", "Início do projeto"],
+    ["inicio_obra", "Início da obra"],
+    ["verba", "Verba prevista para o projeto"],
+    ["investimento", "Faixa de investimento (obra)"],
+    ["execucao", "Executar de uma vez / etapas"],
+    ["ja_arquiteto", "Já trabalhou com arquiteto"],
+    ["urgencia", "Nível de urgência"],
+  ]],
+  ["6. Finalização", [
+    ["algo_mais", "Algo mais importante"],
+    ["disponibilidade", "Disponibilidade para reunião"],
+  ]],
 ];
 
 function esc(s) {
-  return String(s || "").replace(/[&<>"]/g, (c) =>
+  return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])
   );
+}
+
+function fmt(v) {
+  if (Array.isArray(v)) return v.filter(Boolean).join(", ");
+  return v == null ? "" : String(v).trim();
 }
 
 function json(obj, status = 200) {
@@ -34,6 +91,13 @@ function json(obj, status = 200) {
     status,
     headers: { "content-type": "application/json" },
   });
+}
+
+function montarSecoes(data) {
+  const lista = SECOES.slice();
+  if (data.perfil === "Comercial") lista.push(SECAO_COM);
+  else lista.push(SECAO_RES); // Residencial (padrão)
+  return lista.concat(SECOES_FIM);
 }
 
 async function handleOrcamento(request, env) {
@@ -48,28 +112,45 @@ async function handleOrcamento(request, env) {
       data = await request.json();
     } else {
       const fd = await request.formData();
-      for (const [k, v] of fd.entries()) data[k] = v;
+      for (const k of fd.keys()) {
+        const all = fd.getAll(k);
+        data[k] = all.length > 1 ? all : all[0];
+      }
     }
 
     // Honeypot anti-spam: campo oculto "website" deve vir vazio.
     if (data.website) return json({ ok: true });
 
-    if (!data.nome || !data.telefone) {
-      return json({ ok: false, error: "Nome e telefone são obrigatórios." }, 400);
+    if (!fmt(data.nome) || !fmt(data.telefone) || !fmt(data.email)) {
+      return json({ ok: false, error: "Nome, e-mail e telefone são obrigatórios." }, 400);
     }
 
-    const linhasHtml = CAMPOS.map(
-      ([k, label]) =>
-        `<tr><td style="padding:6px 12px;color:#561624;font-weight:600;white-space:nowrap;vertical-align:top">${label}</td><td style="padding:6px 12px">${esc(data[k]) || "—"}</td></tr>`
-    ).join("");
+    const secoes = montarSecoes(data);
 
-    const linhasTxt = CAMPOS.map(([k, label]) => `${label}: ${data[k] || "—"}`).join("\n");
+    let html = `<div style="font-family:system-ui,Arial,sans-serif;max-width:660px">
+      <h2 style="color:#561624;margin:0 0 4px">Novo briefing — Estúdio Gecê</h2>
+      <p style="color:#666;margin:0 0 18px">Projeto ${esc(fmt(data.perfil) || "—")}</p>`;
+    const txt = ["NOVO BRIEFING — ESTÚDIO GECÊ", ""];
 
-    const html = `
-      <div style="font-family:system-ui,Arial,sans-serif;max-width:640px">
-        <h2 style="color:#561624;margin:0 0 12px">Novo briefing — Estúdio Gecê</h2>
-        <table style="border-collapse:collapse;font-size:14px;width:100%">${linhasHtml}</table>
-      </div>`;
+    for (const [titulo, campos] of secoes) {
+      const linhas = campos
+        .map(([k, label]) => [label, fmt(data[k])])
+        .filter(([, v]) => v !== ""); // só mostra o que foi preenchido
+      if (!linhas.length) continue;
+
+      html += `<h3 style="color:#561624;border-bottom:1px solid #eee;padding-bottom:4px;margin:18px 0 8px;font-size:15px">${esc(titulo)}</h3>
+        <table style="border-collapse:collapse;font-size:14px;width:100%">`;
+      html += linhas
+        .map(([label, v]) =>
+          `<tr><td style="padding:5px 12px 5px 0;color:#561624;font-weight:600;white-space:nowrap;vertical-align:top">${esc(label)}</td><td style="padding:5px 0">${esc(v)}</td></tr>`
+        ).join("");
+      html += `</table>`;
+
+      txt.push(titulo);
+      linhas.forEach(([label, v]) => txt.push(`  ${label}: ${v}`));
+      txt.push("");
+    }
+    html += `</div>`;
 
     const resp = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -80,10 +161,10 @@ async function handleOrcamento(request, env) {
       body: JSON.stringify({
         from: REMETENTE,
         to: [DESTINO],
-        reply_to: data.email ? [String(data.email)] : undefined,
-        subject: `Briefing de projeto — ${String(data.nome).slice(0, 80)}`,
+        reply_to: fmt(data.email) ? [fmt(data.email)] : undefined,
+        subject: `Briefing — ${fmt(data.nome).slice(0, 70)} (${fmt(data.perfil) || "projeto"})`,
         html,
-        text: `NOVO BRIEFING — ESTÚDIO GECÊ\n\n${linhasTxt}`,
+        text: txt.join("\n"),
       }),
     });
 
