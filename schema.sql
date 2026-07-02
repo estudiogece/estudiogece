@@ -63,9 +63,7 @@ CREATE TABLE IF NOT EXISTS arquivos (
   id         TEXT PRIMARY KEY,
   projeto_id TEXT REFERENCES projetos(id) ON DELETE CASCADE,
   nome       TEXT NOT NULL,
-  tamanho    INTEGER,
-  tipo       TEXT,
-  r2_key     TEXT NOT NULL,       -- chave do objeto no bucket R2
+  url        TEXT NOT NULL,       -- link do arquivo (ex.: Google Drive)
   created_at INTEGER NOT NULL
 );
 

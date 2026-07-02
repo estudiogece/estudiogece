@@ -66,7 +66,7 @@
   const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
   const money = v => BRL.format(Number(v) || 0);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const fmtBytes = n => { n = Number(n)||0; if (n < 1024) return n+' B'; if (n < 1048576) return (n/1024).toFixed(0)+' KB'; return (n/1048576).toFixed(1)+' MB'; };
+  const linkHost = u => { try { return new URL(u).hostname.replace(/^www\./,''); } catch { return u; } };
   const today = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
   const fmtDate = iso => iso ? new Date(iso+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
   const TIP = { residencial:'Residencial', comercial:'Comercial', interiores:'Interiores', urbanistico:'Urbanístico', reforma:'Reforma', consultoria:'Consultoria' };
@@ -121,11 +121,8 @@
             <div class="kv" style="margin-bottom:10px"><div class="k">Arquivos</div></div>
             ${p.arquivos.map(f => `
               <div class="li" style="padding:10px 0">
-                <div><div>${esc(f.nome)}</div><div class="meta">${fmtBytes(f.tamanho)}</div></div>
-                <div style="display:flex;gap:14px">
-                  <a href="/api/files/${f.id}" target="_blank" rel="noopener" style="color:var(--bordeaux);text-decoration:none;font-weight:600;font-size:13px">Ver</a>
-                  <a href="/api/files/${f.id}?download=1" style="color:var(--bordeaux);text-decoration:none;font-weight:600;font-size:13px">Baixar</a>
-                </div>
+                <div><div>${esc(f.nome)}</div><div class="meta">${esc(linkHost(f.url))}</div></div>
+                <a href="${esc(f.url)}" target="_blank" rel="noopener" style="color:var(--bordeaux);text-decoration:none;font-weight:600;font-size:13px">Abrir ↗</a>
               </div>`).join('')}
           </div>`:''}
         </div>`).join('');

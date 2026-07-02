@@ -340,9 +340,9 @@ const DB = {
 /* Effective financeiro status: pendente + vencido => atrasado */
 const effFinStatus = f => (f.status === 'pendente' && f.vencimento && f.vencimento < todayISO()) ? 'atrasado' : f.status;
 const projName = id => { const p = DB.get('projetos', id); return p ? p.nome : '—'; };
-const fmtBytes = n => { n = Number(n)||0; if (n < 1024) return n+' B'; if (n < 1048576) return (n/1024).toFixed(0)+' KB'; return (n/1048576).toFixed(1)+' MB'; };
+const linkHost = u => { try { return new URL(u).hostname.replace(/^www\./,''); } catch { return u; } };
 
-/* ---------- Modal de arquivos (upload/download por projeto) ---------- */
+/* ---------- Modal de arquivos (links do Google Drive por projeto) ---------- */
 function openFilesModal(projeto) {
   const root = $('#modalRoot');
   const close = () => { root.innerHTML = ''; };
@@ -359,18 +359,18 @@ function openFilesModal(projeto) {
           <div class="modal-body">
             ${files.length ? files.map(f => `
               <div class="row-item">
-                <div><div class="name">${esc(f.nome)}</div><div class="meta">${fmtBytes(f.tamanho)} · ${f.created_at?new Date(f.created_at).toLocaleDateString('pt-BR'):''}</div></div>
+                <div><div class="name">${esc(f.nome)}</div><div class="meta">${esc(linkHost(f.url))}</div></div>
                 <div style="display:flex;gap:4px;align-items:center">
-                  <a class="icon-btn" href="/api/files/${f.id}" target="_blank" rel="noopener">Ver</a>
-                  <a class="icon-btn" href="/api/files/${f.id}?download=1">Baixar</a>
+                  <a class="icon-btn" href="${esc(f.url)}" target="_blank" rel="noopener">Abrir</a>
                   <button class="icon-btn danger" data-delfile="${f.id}" data-name="${esc(f.nome)}">Excluir</button>
                 </div>
-              </div>`).join('') : `<div class="empty" style="padding:24px 0">Nenhum arquivo enviado ainda.</div>`}
-            <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-              <label class="btn ghost sm" style="cursor:pointer;margin:0">+ Enviar arquivos<input type="file" id="fileInput" multiple hidden></label>
-              <span class="sub">PDF, DWG, imagens… até 50 MB cada.</span>
-            </div>
-            <div id="upStatus" class="sub" style="margin-top:12px"></div>
+              </div>`).join('') : `<div class="empty" style="padding:24px 0">Nenhum arquivo vinculado ainda.</div>`}
+            <form id="linkForm" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">
+              <div class="field" style="margin-bottom:12px"><label>Nome do arquivo</label><input name="nome" required placeholder="Ex.: Projeto executivo (PDF)"></div>
+              <div class="field" style="margin-bottom:12px"><label>Link do Google Drive</label><input name="url" type="url" required placeholder="https://drive.google.com/…"></div>
+              <button type="submit" class="btn sm">+ Vincular arquivo</button>
+              <span class="sub" style="margin-left:10px">Cole o link de compartilhamento do Drive.</span>
+            </form>
           </div>
           <div class="modal-foot"><button type="button" class="btn subtle" id="fDone">Fechar</button></div>
         </div>
@@ -378,30 +378,19 @@ function openFilesModal(projeto) {
     $('#fClose').onclick = close;
     $('#fDone').onclick = close;
     $('#overlay').onclick = e => { if (e.target.id === 'overlay') close(); };
-    $('#fileInput').onchange = async e => {
-      const list = [...e.target.files]; if (!list.length) return;
-      const status = $('#upStatus');
-      for (let i = 0; i < list.length; i++) {
-        const file = list[i];
-        if (file.size > 50 * 1024 * 1024) { status.textContent = `"${file.name}" passa de 50 MB — pulado.`; continue; }
-        status.textContent = `Enviando ${i+1}/${list.length}: ${file.name}…`;
-        try {
-          const res = await fetch(`/api/admin/arquivos?projetoId=${encodeURIComponent(projeto.id)}&nome=${encodeURIComponent(file.name)}`, {
-            method: 'POST', headers: { 'content-type': file.type || 'application/octet-stream' }, body: file,
-          });
-          if (res.status === 401) { location.href = '/login'; return; }
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok || data.ok === false) throw new Error(data.error || 'falha no envio');
-        } catch (err) { status.textContent = `Erro em ${file.name}: ${err.message}`; return; }
-      }
-      await DB.load(); await draw(); toast('Arquivo(s) enviado(s).');
+    $('#linkForm').onsubmit = async e => {
+      e.preventDefault();
+      const fd = Object.fromEntries(new FormData(e.target).entries());
+      const btn = e.target.querySelector('button[type=submit]'); btn.disabled = true;
+      try {
+        await DB.upsert('arquivos', { nome: fd.nome, url: fd.url, projetoId: projeto.id });
+        await draw(); toast('Arquivo vinculado.');
+      } catch (err) { toast(err.message || 'Erro ao vincular.'); btn.disabled = false; }
     };
     root.querySelectorAll('[data-delfile]').forEach(b => b.onclick = async () => {
-      if (!confirm(`Remover "${b.dataset.name}"? Esta ação não pode ser desfeita.`)) return;
-      try {
-        await api('DELETE', `/admin/arquivos/${b.dataset.delfile}`);
-        await DB.load(); await draw(); toast('Arquivo removido.');
-      } catch (err) { toast(err.message || 'Erro ao remover.'); }
+      if (!confirm(`Remover o link "${b.dataset.name}"?`)) return;
+      try { await DB.remove('arquivos', b.dataset.delfile); await draw(); toast('Arquivo removido.'); }
+      catch (err) { toast(err.message || 'Erro ao remover.'); }
     });
   }
   draw();
