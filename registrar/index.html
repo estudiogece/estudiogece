@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>Entrar — Estúdio Gecê</title>
+<title>Criar conta — Estúdio Gecê</title>
 <link rel="icon" type="image/svg+xml" href="/assets/img/selo-fullcolor.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
-  :root { --bordeaux:#561624; --bordeaux-light:#7a2438; --cream:#FAF7F4; --ink:#211013; --muted:#8a7a7d; --line:#e8e0e1; --danger:#a13b3b; --radius:10px; }
+  :root { --bordeaux:#561624; --bordeaux-light:#7a2438; --cream:#FAF7F4; --ink:#211013; --muted:#8a7a7d; --line:#e8e0e1; --ok:#3f6b4f; --danger:#a13b3b; --radius:10px; }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
   .card { background:#fff; border:1px solid var(--line); border-radius:16px; box-shadow:0 30px 60px -40px rgba(86,22,36,.5); width:100%; max-width:400px; padding:38px 34px; }
@@ -27,69 +27,72 @@
   .btn { width:100%; font-family:inherit; font-size:15px; font-weight:600; background:var(--bordeaux); color:#fff; border:none; border-radius:var(--radius); padding:13px; cursor:pointer; transition:background .15s ease; margin-top:6px; }
   .btn:hover { background:var(--bordeaux-light); }
   .btn:disabled { opacity:.6; cursor:default; }
-  .msg { font-size:13px; color:var(--danger); background:#f6dede; border-radius:var(--radius); padding:10px 12px; margin-bottom:16px; display:none; }
+  .msg { font-size:13px; border-radius:var(--radius); padding:10px 12px; margin-bottom:16px; display:none; }
   .msg.show { display:block; }
+  .msg.err { color:var(--danger); background:#f6dede; }
+  .msg.ok { color:var(--ok); background:#e2ede5; }
   .foot { margin-top:22px; font-size:12.5px; color:var(--muted); text-align:center; }
   .foot a { color:var(--bordeaux); text-decoration:none; }
 </style>
 </head>
 <body>
-  <form class="card" id="loginForm" autocomplete="on">
+  <form class="card" id="regForm" autocomplete="on">
     <div class="brand">
       <div class="mark">g</div>
-      <div class="txt">ESTÚDIO GECÊ<span>Área privada</span></div>
+      <div class="txt">ESTÚDIO GECÊ<span>Portal do cliente</span></div>
     </div>
-    <h1>Entrar</h1>
-    <p class="sub">Acesse o painel com suas credenciais.</p>
+    <h1>Criar conta</h1>
+    <p class="sub">Crie sua conta para acompanhar seus projetos com o Estúdio Gecê.</p>
     <div class="msg" id="msg"></div>
     <div class="field">
+      <label for="name">Nome completo</label>
+      <input type="text" id="name" name="name" required autocomplete="name" placeholder="Seu nome">
+    </div>
+    <div class="field">
       <label for="email">E-mail</label>
-      <input type="email" id="email" name="email" required autocomplete="username" placeholder="voce@estudiogece.com.br">
+      <input type="email" id="email" name="email" required autocomplete="email" placeholder="voce@email.com">
     </div>
     <div class="field">
       <label for="senha">Senha</label>
-      <input type="password" id="senha" name="senha" required autocomplete="current-password" placeholder="••••••••">
+      <input type="password" id="senha" name="senha" required minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
     </div>
-    <button class="btn" type="submit" id="btn">Entrar</button>
-    <div class="foot">Ainda não tem conta? <a href="/registrar/">Criar conta</a></div>
-    <div class="foot" style="margin-top:8px"><a href="/">← Voltar ao site</a></div>
+    <button class="btn" type="submit" id="btn">Criar conta</button>
+    <div class="foot">Já tem conta? <a href="/login/">Entrar</a></div>
   </form>
 
 <script>
-  const params = new URLSearchParams(location.search);
-  const next = params.get('next') || '/admin/';
-  const form = document.getElementById('loginForm');
+  const form = document.getElementById('regForm');
   const msg = document.getElementById('msg');
   const btn = document.getElementById('btn');
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    msg.classList.remove('show');
-    btn.disabled = true; btn.textContent = 'Entrando…';
+    msg.className = 'msg';
+    btn.disabled = true; btn.textContent = 'Criando…';
     try {
-      const res = await fetch('/api/login', {
+      const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
+          name: document.getElementById('name').value,
           email: document.getElementById('email').value,
           senha: document.getElementById('senha').value,
         }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.ok) {
-        const role = data.user && data.user.role;
-        const home = role === 'admin' ? '/admin/' : '/portal/';
-        const dest = (next && next !== '/admin/') ? next : home;
-        location.href = dest.startsWith('/') ? dest : home;
+        msg.textContent = 'Conta criada! Redirecionando…';
+        msg.className = 'msg ok show';
+        setTimeout(() => (location.href = '/portal/'), 800);
       } else {
-        msg.textContent = data.error || 'Não foi possível entrar.';
-        msg.classList.add('show');
+        msg.textContent = data.error || 'Não foi possível criar a conta.';
+        msg.className = 'msg err show';
+        btn.disabled = false; btn.textContent = 'Criar conta';
       }
     } catch {
       msg.textContent = 'Erro de conexão. Tente novamente.';
-      msg.classList.add('show');
-    } finally {
-      btn.disabled = false; btn.textContent = 'Entrar';
+      msg.className = 'msg err show';
+      btn.disabled = false; btn.textContent = 'Criar conta';
     }
   });
 </script>

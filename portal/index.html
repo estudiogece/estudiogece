@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Meu portal — Estúdio Gecê</title>
+<link rel="icon" type="image/svg+xml" href="/assets/img/selo-fullcolor.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+  :root { --bordeaux:#561624; --bordeaux-light:#7a2438; --cream:#FAF7F4; --ink:#211013; --muted:#8a7a7d; --line:#e8e0e1; --ok:#3f6b4f; --warn:#b3762c; --blue:#3d6b8a; --danger:#a13b3b; --radius:12px; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; }
+  .topbar { background:var(--bordeaux); color:#fff; }
+  .topbar-inner { max-width:960px; margin:0 auto; padding:18px 24px; display:flex; align-items:center; justify-content:space-between; }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .mark { width:36px; height:36px; border-radius:50%; background:#fff; color:var(--bordeaux); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px; }
+  .brand .txt { font-size:14px; font-weight:600; letter-spacing:.04em; }
+  .brand .txt span { display:block; font-size:11px; font-weight:400; opacity:.65; }
+  .logout { font-family:inherit; font-size:12.5px; font-weight:500; color:rgba(255,255,255,.8); background:rgba(255,255,255,.1); border:none; border-radius:8px; padding:8px 14px; cursor:pointer; }
+  .logout:hover { background:rgba(255,255,255,.2); color:#fff; }
+  main { max-width:960px; margin:0 auto; padding:36px 24px 60px; }
+  .hello { font-size:24px; font-weight:700; margin-bottom:4px; }
+  .hello-sub { color:var(--muted); font-size:14px; margin-bottom:32px; }
+  h2 { font-size:15px; font-weight:700; margin:32px 0 14px; }
+  .proj { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px; margin-bottom:16px; }
+  .proj-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:14px; }
+  .proj-title { font-size:18px; font-weight:700; }
+  .proj-meta { font-size:12.5px; color:var(--muted); margin-top:3px; }
+  .badge { font-size:11px; font-weight:600; padding:4px 11px; border-radius:20px; white-space:nowrap; }
+  .badge.proposta { background:#eee7e8; color:var(--muted); }
+  .badge.andamento { background:#e4ecf0; color:var(--blue); }
+  .badge.pausado { background:#fbe9d9; color:var(--warn); }
+  .badge.concluido { background:#e2ede5; color:var(--ok); }
+  .badge.pendente { background:#fbe9d9; color:var(--warn); }
+  .badge.atrasado { background:#f6dede; color:var(--danger); }
+  .badge.pago { background:#e2ede5; color:var(--ok); }
+  .proj-body { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; border-top:1px solid var(--line); padding-top:14px; }
+  .kv .k { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:600; margin-bottom:3px; }
+  .kv .v { font-size:14px; font-weight:500; }
+  .list { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:8px 22px; }
+  .li { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 0; border-bottom:1px solid var(--line); font-size:14px; }
+  .li:last-child { border-bottom:none; }
+  .li .meta { color:var(--muted); font-size:12.5px; }
+  .empty { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:44px 24px; text-align:center; color:var(--muted); font-size:14px; }
+  .empty strong { display:block; color:var(--ink); font-size:16px; font-weight:600; margin-bottom:6px; }
+  .loading { text-align:center; color:var(--muted); padding:60px; font-size:14px; }
+  @media (max-width:640px){ .proj-body{ grid-template-columns:1fr 1fr; } }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="mark">g</div>
+        <div class="txt">ESTÚDIO GECÊ<span>Portal do cliente</span></div>
+      </div>
+      <button class="logout" id="logout">Sair</button>
+    </div>
+  </div>
+  <main id="app"><div class="loading">Carregando…</div></main>
+
+<script>
+  const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+  const money = v => BRL.format(Number(v) || 0);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const today = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+  const fmtDate = iso => iso ? new Date(iso+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+  const TIP = { residencial:'Residencial', comercial:'Comercial', interiores:'Interiores', urbanistico:'Urbanístico', reforma:'Reforma', consultoria:'Consultoria' };
+  const PST = { proposta:'Proposta', andamento:'Em andamento', pausado:'Pausado', concluido:'Concluído' };
+  const EVT = { reuniao:'Reunião', visita:'Visita técnica', entrega:'Entrega', obra:'Obra', outro:'Compromisso' };
+  const effFin = f => (f.status==='pendente' && f.vencimento && f.vencimento < today()) ? 'atrasado' : f.status;
+  const FST = { pendente:'A pagar', pago:'Pago', atrasado:'Vencido' };
+
+  document.getElementById('logout').onclick = async () => {
+    try { await fetch('/api/logout', { method:'POST' }); } catch {}
+    location.href = '/login';
+  };
+
+  (async () => {
+    let d;
+    try {
+      const res = await fetch('/api/portal/data');
+      if (res.status === 401) { location.href = '/login'; return; }
+      d = await res.json();
+    } catch {
+      document.getElementById('app').innerHTML = '<div class="empty"><strong>Erro ao carregar.</strong>Tente recarregar a página.</div>';
+      return;
+    }
+
+    const nome = (d.user && d.user.name) ? d.user.name.split(' ')[0] : 'Cliente';
+    const projetos = d.projetos || [];
+    const eventos = (d.eventos || []).filter(e => e.data >= today());
+    const financeiro = d.financeiro || [];
+
+    let html = `<div class="hello">Olá, ${esc(nome)} 👋</div>
+      <div class="hello-sub">Acompanhe aqui o andamento dos seus projetos com o Estúdio Gecê.</div>`;
+
+    html += `<h2>Seus projetos</h2>`;
+    if (projetos.length) {
+      html += projetos.map(p => `
+        <div class="proj">
+          <div class="proj-head">
+            <div>
+              <div class="proj-title">${esc(p.nome)}</div>
+              <div class="proj-meta">${TIP[p.tipologia]||''}${p.local?(' · '+esc(p.local)):''}</div>
+            </div>
+            <span class="badge ${p.status||'proposta'}">${PST[p.status]||'—'}</span>
+          </div>
+          <div class="proj-body">
+            <div class="kv"><div class="k">Prazo</div><div class="v">${p.prazo?fmtDate(p.prazo):'A definir'}</div></div>
+            <div class="kv"><div class="k">Etapa</div><div class="v">${PST[p.status]||'—'}</div></div>
+            <div class="kv"><div class="k">Início</div><div class="v">${p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):'—'}</div></div>
+          </div>
+          ${p.notas?`<div class="proj-meta" style="margin-top:14px">${esc(p.notas)}</div>`:''}
+        </div>`).join('');
+    } else {
+      html += `<div class="empty"><strong>Seus projetos aparecerão aqui em breve.</strong>Assim que o Estúdio Gecê vincular um projeto à sua conta, ele aparece nesta página.</div>`;
+    }
+
+    if (eventos.length) {
+      html += `<h2>Próximos compromissos</h2><div class="list">` + eventos.map(e => `
+        <div class="li">
+          <div><div>${esc(e.titulo)}</div><div class="meta">${EVT[e.tipo]||''}${e.hora?(' · '+e.hora):''}</div></div>
+          <div class="meta">${fmtDate(e.data)}</div>
+        </div>`).join('') + `</div>`;
+    }
+
+    if (financeiro.length) {
+      html += `<h2>Pagamentos</h2><div class="list">` + financeiro.map(f => { const st=effFin(f); return `
+        <div class="li">
+          <div><div>${esc(f.descricao)}</div><div class="meta">Vencimento ${fmtDate(f.vencimento)}</div></div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="badge ${st}">${FST[st]||st}</span>
+            <strong>${money(f.valor)}</strong>
+          </div>
+        </div>`; }).join('') + `</div>`;
+    }
+
+    document.getElementById('app').innerHTML = html;
+  })();
+</script>
+</body>
+</html>

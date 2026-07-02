@@ -1,12 +1,13 @@
-// Worker do Estúdio Gecê — serve o site estático (binding ASSETS) e trata a API.
-// Rota de API: POST /api/orcamento -> envia o briefing por e-mail via Resend.
-// Requer o secret RESEND_API_KEY (configurado no painel do Worker).
+// Worker do Estúdio Gecê — serve o site estático (binding ASSETS), API de
+// briefing (Resend), autenticação (D1 + cookie de sessão assinado) e a API
+// de dados do painel/portal.
+//
+// Bindings: ASSETS (assets), DB (D1 "estudiogece-db").
+// Secrets: RESEND_API_KEY, SESSION_SECRET, ADMIN_PASSWORD.
 
 const DESTINO = "falecom@estudiogece.com.br";
-// Remetente precisa usar um domínio verificado no Resend.
 const REMETENTE = "Briefing Estúdio Gecê <briefing@estudiogece.com.br>";
 
-// Seções fixas (na ordem). A Seção 4 (programa de necessidades) é condicional.
 const SECOES = [
   ["1. Identificação do solicitante", [
     ["nome", "Nome completo"],
@@ -80,23 +81,21 @@ function esc(s) {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])
   );
 }
-
 function fmt(v) {
   if (Array.isArray(v)) return v.filter(Boolean).join(", ");
   return v == null ? "" : String(v).trim();
 }
-
-function json(obj, status = 200) {
+function json(obj, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...extraHeaders },
   });
 }
 
 function montarSecoes(data) {
   const lista = SECOES.slice();
   if (data.perfil === "Comercial") lista.push(SECAO_COM);
-  else lista.push(SECAO_RES); // Residencial (padrão)
+  else lista.push(SECAO_RES);
   return lista.concat(SECOES_FIM);
 }
 
@@ -105,74 +104,53 @@ async function handleOrcamento(request, env) {
     if (!env.RESEND_API_KEY) {
       return json({ ok: false, error: "Configuração de envio ausente." }, 500);
     }
-
     const ct = request.headers.get("content-type") || "";
     let data = {};
-    if (ct.includes("application/json")) {
-      data = await request.json();
-    } else {
+    if (ct.includes("application/json")) data = await request.json();
+    else {
       const fd = await request.formData();
       for (const k of fd.keys()) {
         const all = fd.getAll(k);
         data[k] = all.length > 1 ? all : all[0];
       }
     }
-
-    // Honeypot anti-spam: campo oculto "website" deve vir vazio.
     if (data.website) return json({ ok: true });
-
     if (!fmt(data.nome) || !fmt(data.telefone) || !fmt(data.email)) {
       return json({ ok: false, error: "Nome, e-mail e telefone são obrigatórios." }, 400);
     }
-
     const secoes = montarSecoes(data);
-
     let html = `<div style="font-family:system-ui,Arial,sans-serif;max-width:660px">
       <h2 style="color:#561624;margin:0 0 4px">Novo briefing — Estúdio Gecê</h2>
       <p style="color:#666;margin:0 0 18px">Projeto ${esc(fmt(data.perfil) || "—")}</p>`;
     const txt = ["NOVO BRIEFING — ESTÚDIO GECÊ", ""];
-
     for (const [titulo, campos] of secoes) {
-      const linhas = campos
-        .map(([k, label]) => [label, fmt(data[k])])
-        .filter(([, v]) => v !== ""); // só mostra o que foi preenchido
+      const linhas = campos.map(([k, label]) => [label, fmt(data[k])]).filter(([, v]) => v !== "");
       if (!linhas.length) continue;
-
       html += `<h3 style="color:#561624;border-bottom:1px solid #eee;padding-bottom:4px;margin:18px 0 8px;font-size:15px">${esc(titulo)}</h3>
         <table style="border-collapse:collapse;font-size:14px;width:100%">`;
-      html += linhas
-        .map(([label, v]) =>
-          `<tr><td style="padding:5px 12px 5px 0;color:#561624;font-weight:600;white-space:nowrap;vertical-align:top">${esc(label)}</td><td style="padding:5px 0">${esc(v)}</td></tr>`
-        ).join("");
+      html += linhas.map(([label, v]) =>
+        `<tr><td style="padding:5px 12px 5px 0;color:#561624;font-weight:600;white-space:nowrap;vertical-align:top">${esc(label)}</td><td style="padding:5px 0">${esc(v)}</td></tr>`
+      ).join("");
       html += `</table>`;
-
       txt.push(titulo);
       linhas.forEach(([label, v]) => txt.push(`  ${label}: ${v}`));
       txt.push("");
     }
     html += `</div>`;
-
     const resp = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.RESEND_API_KEY}`,
-        "content-type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "content-type": "application/json" },
       body: JSON.stringify({
-        from: REMETENTE,
-        to: [DESTINO],
+        from: REMETENTE, to: [DESTINO],
         reply_to: fmt(data.email) ? [fmt(data.email)] : undefined,
         subject: `Briefing — ${fmt(data.nome).slice(0, 70)} (${fmt(data.perfil) || "projeto"})`,
-        html,
-        text: txt.join("\n"),
+        html, text: txt.join("\n"),
       }),
     });
-
     if (!resp.ok) {
       const err = await resp.text();
       return json({ ok: false, error: "Falha ao enviar o e-mail.", detail: err }, 502);
     }
-
     return json({ ok: true });
   } catch (e) {
     return json({ ok: false, error: "Erro inesperado." }, 500);
@@ -180,11 +158,10 @@ async function handleOrcamento(request, env) {
 }
 
 // ============================================================
-// Autenticação (login próprio, sessão por cookie assinado — HMAC).
-// Fase 1: conta única de administrador (ADMIN_EMAIL + secret ADMIN_PASSWORD).
-// Futuro: substituir a verificação por consulta a contas em banco (D1)
-// para permitir que clientes criem conta e acessem seus projetos.
-// Secrets necessários no Worker: ADMIN_PASSWORD, SESSION_SECRET.
+// Autenticação e sessão
+// - Admin: conta única (ADMIN_EMAIL) validada pelo secret ADMIN_PASSWORD.
+// - Clientes: contas em D1 (users, role='client'), senha com PBKDF2-SHA256.
+// - Sessão: cookie assinado (HMAC-SHA256) com { sub, role, exp }.
 // ============================================================
 const ADMIN_EMAIL = "gcamara@estudiogece.com.br";
 const SESSION_COOKIE = "gece_session";
@@ -192,16 +169,16 @@ const SESSION_TTL = 60 * 60 * 24 * 7; // 7 dias
 
 const _enc = new TextEncoder();
 const _dec = new TextDecoder();
+const toHex = (bytes) => Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+const fromHex = (hex) => { const a = new Uint8Array(hex.length / 2); for (let i = 0; i < a.length; i++) a[i] = parseInt(hex.substr(i * 2, 2), 16); return a; };
 
 function bytesToB64url(bytes) {
-  let bin = "";
-  bytes.forEach((b) => (bin += String.fromCharCode(b)));
+  let bin = ""; bytes.forEach((b) => (bin += String.fromCharCode(b)));
   return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 function b64urlToBytes(str) {
   str = str.replace(/-/g, "+").replace(/_/g, "/");
-  const bin = atob(str);
-  const bytes = new Uint8Array(bin.length);
+  const bin = atob(str); const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   return bytes;
 }
@@ -210,40 +187,42 @@ const b64urlToStr = (s) => _dec.decode(b64urlToBytes(s));
 
 function safeEqual(a, b) {
   if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
-  let r = 0;
-  for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  let r = 0; for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return r === 0;
 }
 
-async function hmacKey(secret) {
-  return crypto.subtle.importKey(
-    "raw",
-    _enc.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign", "verify"]
-  );
+async function pbkdf2(password, saltBytes, iterations = 100000) {
+  const key = await crypto.subtle.importKey("raw", _enc.encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt: saltBytes, iterations, hash: "SHA-256" }, key, 256);
+  return new Uint8Array(bits);
 }
-async function signSession(email, secret) {
-  const payload = { sub: email, exp: Math.floor(Date.now() / 1000) + SESSION_TTL };
+async function hashPassword(password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  return { salt: toHex(salt), hash: toHex(await pbkdf2(password, salt)) };
+}
+async function verifyPassword(password, saltHex, hashHex) {
+  return safeEqual(toHex(await pbkdf2(password, fromHex(saltHex))), hashHex);
+}
+
+async function hmacKey(secret) {
+  return crypto.subtle.importKey("raw", _enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
+}
+async function signSession(claims, secret) {
+  const payload = { ...claims, exp: Math.floor(Date.now() / 1000) + SESSION_TTL };
   const data = strToB64url(JSON.stringify(payload));
-  const key = await hmacKey(secret);
-  const sig = await crypto.subtle.sign("HMAC", key, _enc.encode(data));
+  const sig = await crypto.subtle.sign("HMAC", await hmacKey(secret), _enc.encode(data));
   return data + "." + bytesToB64url(new Uint8Array(sig));
 }
 async function verifySession(token, secret) {
-  if (!token || token.indexOf(".") < 0) return null;
+  if (!token || !secret || token.indexOf(".") < 0) return null;
   const [data, sig] = token.split(".");
   try {
-    const key = await hmacKey(secret);
-    const ok = await crypto.subtle.verify("HMAC", key, b64urlToBytes(sig), _enc.encode(data));
+    const ok = await crypto.subtle.verify("HMAC", await hmacKey(secret), b64urlToBytes(sig), _enc.encode(data));
     if (!ok) return null;
     const payload = JSON.parse(b64urlToStr(data));
     if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) return null;
     return payload;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 function getCookie(request, name) {
@@ -254,42 +233,183 @@ function getCookie(request, name) {
 function sessionCookie(token, maxAge) {
   return `${SESSION_COOKIE}=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${maxAge}`;
 }
+async function sessionFrom(request, env) {
+  return verifySession(getCookie(request, SESSION_COOKIE), env.SESSION_SECRET);
+}
 
-async function isAuthed(request, env) {
-  if (!env.SESSION_SECRET) return false;
-  return !!(await verifySession(getCookie(request, SESSION_COOKIE), env.SESSION_SECRET));
+async function readBody(request) {
+  const ct = request.headers.get("content-type") || "";
+  if (ct.includes("application/json")) return request.json();
+  const fd = await request.formData(); const o = {};
+  for (const k of fd.keys()) o[k] = fd.get(k);
+  return o;
+}
+const emailOk = (e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e);
+
+async function handleRegister(request, env) {
+  if (!env.SESSION_SECRET) return json({ ok: false, error: "Servidor não configurado." }, 500);
+  const b = await readBody(request);
+  const name = String(b.name || "").trim();
+  const email = String(b.email || "").trim().toLowerCase();
+  const senha = String(b.senha || "");
+  if (!name || !emailOk(email) || senha.length < 6) {
+    return json({ ok: false, error: "Preencha nome, e-mail válido e senha (mín. 6 caracteres)." }, 400);
+  }
+  if (email === ADMIN_EMAIL.toLowerCase()) return json({ ok: false, error: "E-mail indisponível." }, 409);
+  const exists = await env.DB.prepare("SELECT id FROM users WHERE email=?").bind(email).first();
+  if (exists) return json({ ok: false, error: "Já existe uma conta com este e-mail." }, 409);
+  const { salt, hash } = await hashPassword(senha);
+  const id = crypto.randomUUID();
+  await env.DB.prepare(
+    "INSERT INTO users (id,name,email,password_hash,password_salt,role,created_at) VALUES (?,?,?,?,?,?,?)"
+  ).bind(id, name, email, hash, salt, "client", Date.now()).run();
+  const token = await signSession({ sub: id, role: "client" }, env.SESSION_SECRET);
+  return json({ ok: true, user: { name, email, role: "client" } }, 200, { "Set-Cookie": sessionCookie(token, SESSION_TTL) });
 }
 
 async function handleLogin(request, env) {
-  if (!env.SESSION_SECRET || !env.ADMIN_PASSWORD) {
-    return json({ ok: false, error: "Login não configurado no servidor." }, 500);
+  if (!env.SESSION_SECRET) return json({ ok: false, error: "Servidor não configurado." }, 500);
+  const b = await readBody(request);
+  const email = String(b.email || "").trim().toLowerCase();
+  const senha = String(b.senha || "");
+  let claims = null, user = null;
+
+  if (email === ADMIN_EMAIL.toLowerCase()) {
+    if (env.ADMIN_PASSWORD && safeEqual(senha, env.ADMIN_PASSWORD)) {
+      claims = { sub: "admin", role: "admin" };
+      user = { name: "Gabriel Câmara", email: ADMIN_EMAIL, role: "admin" };
+    }
+  } else {
+    const row = await env.DB.prepare("SELECT * FROM users WHERE email=?").bind(email).first();
+    if (row && (await verifyPassword(senha, row.password_salt, row.password_hash))) {
+      claims = { sub: row.id, role: row.role };
+      user = { name: row.name, email: row.email, role: row.role };
+    }
   }
-  let data = {};
-  const ct = request.headers.get("content-type") || "";
-  if (ct.includes("application/json")) data = await request.json();
-  else {
-    const fd = await request.formData();
-    for (const k of fd.keys()) data[k] = fd.get(k);
-  }
-  const email = String(data.email || "").trim().toLowerCase();
-  const senha = String(data.senha || "");
-  const ok = safeEqual(email, ADMIN_EMAIL.toLowerCase()) & safeEqual(senha, env.ADMIN_PASSWORD);
-  if (!ok) {
-    await new Promise((r) => setTimeout(r, 500)); // penalidade leve contra brute force
+  if (!claims) {
+    await new Promise((r) => setTimeout(r, 500));
     return json({ ok: false, error: "E-mail ou senha inválidos." }, 401);
   }
-  const token = await signSession(ADMIN_EMAIL, env.SESSION_SECRET);
-  return new Response(JSON.stringify({ ok: true }), {
-    status: 200,
-    headers: { "content-type": "application/json", "Set-Cookie": sessionCookie(token, SESSION_TTL) },
-  });
+  const token = await signSession(claims, env.SESSION_SECRET);
+  return json({ ok: true, user }, 200, { "Set-Cookie": sessionCookie(token, SESSION_TTL) });
 }
 
 function handleLogout() {
-  return new Response(JSON.stringify({ ok: true }), {
-    status: 200,
-    headers: { "content-type": "application/json", "Set-Cookie": sessionCookie("", 0) },
-  });
+  return json({ ok: true }, 200, { "Set-Cookie": sessionCookie("", 0) });
+}
+
+async function handleMe(request, env) {
+  const s = await sessionFrom(request, env);
+  if (!s) return json({ ok: false }, 401);
+  if (s.role === "admin") return json({ ok: true, user: { name: "Gabriel Câmara", email: ADMIN_EMAIL, role: "admin" } });
+  const row = await env.DB.prepare("SELECT name,email,role FROM users WHERE id=?").bind(s.sub).first();
+  if (!row) return json({ ok: false }, 401);
+  return json({ ok: true, user: row });
+}
+
+// ============================================================
+// API de dados (D1). Campos expostos em camelCase -> colunas no banco.
+// ============================================================
+const TABLES = {
+  projetos: { nome: "nome", cliente: "cliente", clientId: "client_id", tipologia: "tipologia", status: "status", valor: "valor", prazo: "prazo", local: "local", notas: "notas" },
+  financeiro: { descricao: "descricao", tipo: "tipo", valor: "valor", vencimento: "vencimento", status: "status", projetoId: "projeto_id" },
+  eventos: { titulo: "titulo", data: "data", hora: "hora", tipo: "tipo", projetoId: "projeto_id", notas: "notas" },
+  leads: { nome: "nome", contato: "contato", origem: "origem", interesse: "interesse", status: "status", valor: "valor", notas: "notas" },
+};
+const selectList = (table) => ["id", "created_at", ...Object.entries(TABLES[table]).map(([a, d]) => `${d} AS ${a}`)].join(", ");
+
+async function projetosWithClient(env, whereClientId) {
+  let sql = `SELECT p.id, p.created_at, p.nome, p.cliente, p.client_id AS clientId, p.tipologia, p.status,
+    p.valor, p.prazo, p.local, p.notas, u.name AS clientNome, u.email AS clientEmail
+    FROM projetos p LEFT JOIN users u ON u.id = p.client_id`;
+  const binds = [];
+  if (whereClientId) { sql += " WHERE p.client_id = ?"; binds.push(whereClientId); }
+  sql += " ORDER BY p.created_at DESC";
+  return (await env.DB.prepare(sql).bind(...binds).all()).results || [];
+}
+
+async function handleAdminData(env) {
+  const [projetos, financeiro, eventos, leads, clientes] = await Promise.all([
+    projetosWithClient(env, null),
+    env.DB.prepare(`SELECT ${selectList("financeiro")} FROM financeiro ORDER BY vencimento DESC`).all().then((r) => r.results || []),
+    env.DB.prepare(`SELECT ${selectList("eventos")} FROM eventos ORDER BY data ASC`).all().then((r) => r.results || []),
+    env.DB.prepare(`SELECT ${selectList("leads")} FROM leads ORDER BY created_at DESC`).all().then((r) => r.results || []),
+    env.DB.prepare(`SELECT id, name, email, created_at,
+      (SELECT COUNT(*) FROM projetos p WHERE p.client_id = users.id) AS numProjetos
+      FROM users WHERE role='client' ORDER BY created_at DESC`).all().then((r) => r.results || []),
+  ]);
+  return json({ projetos, financeiro, eventos, leads, clientes });
+}
+
+function pickFields(table, body) {
+  const map = TABLES[table]; const cols = [], vals = [];
+  for (const [apiField, dbCol] of Object.entries(map)) {
+    if (apiField in body) { let v = body[apiField]; if (v === "" || v === undefined) v = null; cols.push(dbCol); vals.push(v); }
+  }
+  return { cols, vals };
+}
+async function handleAdminCreate(env, table, body) {
+  const { cols, vals } = pickFields(table, body);
+  const id = crypto.randomUUID(), createdAt = Date.now();
+  const allCols = ["id", ...cols, "created_at"], allVals = [id, ...vals, createdAt];
+  await env.DB.prepare(`INSERT INTO ${table} (${allCols.join(",")}) VALUES (${allCols.map(() => "?").join(",")})`).bind(...allVals).run();
+  const record = table === "projetos"
+    ? (await projetosWithClient(env, null)).find((p) => p.id === id)
+    : await env.DB.prepare(`SELECT ${selectList(table)} FROM ${table} WHERE id=?`).bind(id).first();
+  return json({ ok: true, record });
+}
+async function handleAdminUpdate(env, table, id, body) {
+  const { cols, vals } = pickFields(table, body);
+  if (cols.length) {
+    await env.DB.prepare(`UPDATE ${table} SET ${cols.map((c) => c + "=?").join(",")} WHERE id=?`).bind(...vals, id).run();
+  }
+  const record = table === "projetos"
+    ? (await projetosWithClient(env, null)).find((p) => p.id === id)
+    : await env.DB.prepare(`SELECT ${selectList(table)} FROM ${table} WHERE id=?`).bind(id).first();
+  return json({ ok: true, record });
+}
+async function handleAdminDelete(env, table, id) {
+  await env.DB.prepare(`DELETE FROM ${table} WHERE id=?`).bind(id).run();
+  return json({ ok: true });
+}
+
+async function handlePortalData(env, session) {
+  if (session.role === "admin") return json({ user: { name: "Gabriel Câmara", role: "admin" }, projetos: [], eventos: [], financeiro: [] });
+  const uid = session.sub;
+  const user = await env.DB.prepare("SELECT name,email FROM users WHERE id=?").bind(uid).first();
+  const projetos = await projetosWithClient(env, uid);
+  const ids = projetos.map((p) => p.id);
+  let eventos = [], financeiro = [];
+  if (ids.length) {
+    const ph = ids.map(() => "?").join(",");
+    eventos = (await env.DB.prepare(`SELECT ${selectList("eventos")} FROM eventos WHERE projeto_id IN (${ph}) ORDER BY data ASC`).bind(...ids).all()).results || [];
+    // Portal do cliente mostra apenas receitas (pagamentos), não despesas do estúdio.
+    financeiro = (await env.DB.prepare(`SELECT ${selectList("financeiro")} FROM financeiro WHERE projeto_id IN (${ph}) AND tipo='receita' ORDER BY vencimento ASC`).bind(...ids).all()).results || [];
+  }
+  return json({ user, projetos, eventos, financeiro });
+}
+
+async function handleApiData(request, env, url) {
+  const session = await sessionFrom(request, env);
+  const parts = url.pathname.split("/").filter(Boolean); // ["api","admin","projetos","<id>"]
+
+  if (parts[1] === "portal") {
+    if (!session) return json({ ok: false, error: "Não autenticado." }, 401);
+    if (parts[2] === "data") return handlePortalData(env, session);
+    return json({ ok: false, error: "Rota inválida." }, 404);
+  }
+
+  if (parts[1] === "admin") {
+    if (!session || session.role !== "admin") return json({ ok: false, error: "Acesso restrito." }, 403);
+    if (parts[2] === "data") return handleAdminData(env);
+    const table = parts[2], id = parts[3];
+    if (!TABLES[table]) return json({ ok: false, error: "Coleção inválida." }, 404);
+    if (request.method === "POST") return handleAdminCreate(env, table, await readBody(request));
+    if (request.method === "PUT") return handleAdminUpdate(env, table, id, await readBody(request));
+    if (request.method === "DELETE") return handleAdminDelete(env, table, id);
+    return json({ ok: false, error: "Método não permitido." }, 405);
+  }
+  return json({ ok: false, error: "Rota inválida." }, 404);
 }
 
 export default {
@@ -297,26 +417,42 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
+    // --- API ---
     if (path === "/api/orcamento") {
       if (request.method !== "POST") return json({ ok: false, error: "Método não permitido." }, 405);
       return handleOrcamento(request, env);
+    }
+    if (path === "/api/register") {
+      if (request.method !== "POST") return json({ ok: false, error: "Método não permitido." }, 405);
+      return handleRegister(request, env);
     }
     if (path === "/api/login") {
       if (request.method !== "POST") return json({ ok: false, error: "Método não permitido." }, 405);
       return handleLogin(request, env);
     }
     if (path === "/api/logout") return handleLogout();
-
-    // Área privada: exige sessão válida, senão manda para o login.
-    if (path === "/admin" || path.startsWith("/admin/")) {
-      if (!(await isAuthed(request, env))) {
-        const to = new URL("/login", url.origin);
-        to.searchParams.set("next", path);
-        return Response.redirect(to.toString(), 302);
-      }
+    if (path === "/api/me") return handleMe(request, env);
+    if (path.startsWith("/api/admin/") || path.startsWith("/api/portal/")) {
+      return handleApiData(request, env, url);
     }
 
-    // Todo o restante é servido pelo site estático.
+    // --- Páginas privadas ---
+    if (path === "/admin" || path.startsWith("/admin/")) {
+      const s = await sessionFrom(request, env);
+      if (!s) return redirectTo(url, "/login", path);
+      if (s.role !== "admin") return Response.redirect(new URL("/portal/", url.origin).toString(), 302);
+    }
+    if (path === "/portal" || path.startsWith("/portal/")) {
+      const s = await sessionFrom(request, env);
+      if (!s) return redirectTo(url, "/login", path);
+    }
+
     return env.ASSETS.fetch(request);
   },
 };
+
+function redirectTo(url, to, next) {
+  const dest = new URL(to, url.origin);
+  if (next) dest.searchParams.set("next", next);
+  return Response.redirect(dest.toString(), 302);
+}
