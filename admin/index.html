@@ -349,8 +349,8 @@ const linkHost = u => { try { return new URL(u).hostname.replace(/^www\./,''); }
    Preencha apiKey e clientId (obtidos no Google Cloud Console) para ligar o
    botão "Escolher no Google Drive". Vazio = botão fica oculto (só link manual). */
 const GDRIVE = {
-  apiKey: '',      // API key restrita ao domínio + Google Picker API
-  clientId: '',    // OAuth 2.0 Client ID (aplicação web)
+  apiKey: 'AIzaSyDBUVl1FJ1ksFJsR766cjooYbMNpYF5HRQ',  // API key (Google Picker API)
+  clientId: '893374859773-8k5v800igkl51c6qr948st78h0ls5ngp.apps.googleusercontent.com',
   scope: 'https://www.googleapis.com/auth/drive.readonly',
   token: null, tokenClient: null, pickerReady: false, onPick: null,
   enabled() { return !!(this.apiKey && this.clientId); },
