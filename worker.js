@@ -328,9 +328,22 @@ async function projetosWithClient(env, whereClientId) {
   return (await env.DB.prepare(sql).bind(...binds).all()).results || [];
 }
 
+async function attachArquivos(env, projetos) {
+  if (!projetos.length) return projetos;
+  const ids = projetos.map((p) => p.id);
+  const ph = ids.map(() => "?").join(",");
+  const files = (await env.DB.prepare(
+    `SELECT id, projeto_id AS projetoId, nome, tamanho, tipo, created_at FROM arquivos WHERE projeto_id IN (${ph}) ORDER BY created_at DESC`
+  ).bind(...ids).all()).results || [];
+  const byProj = {};
+  files.forEach((f) => { (byProj[f.projetoId] = byProj[f.projetoId] || []).push(f); });
+  projetos.forEach((p) => { p.arquivos = byProj[p.id] || []; });
+  return projetos;
+}
+
 async function handleAdminData(env) {
   const [projetos, financeiro, eventos, leads, clientes] = await Promise.all([
-    projetosWithClient(env, null),
+    projetosWithClient(env, null).then((ps) => attachArquivos(env, ps)),
     env.DB.prepare(`SELECT ${selectList("financeiro")} FROM financeiro ORDER BY vencimento DESC`).all().then((r) => r.results || []),
     env.DB.prepare(`SELECT ${selectList("eventos")} FROM eventos ORDER BY data ASC`).all().then((r) => r.results || []),
     env.DB.prepare(`SELECT ${selectList("leads")} FROM leads ORDER BY created_at DESC`).all().then((r) => r.results || []),
@@ -377,7 +390,7 @@ async function handlePortalData(env, session) {
   if (session.role === "admin") return json({ user: { name: "Gabriel Câmara", role: "admin" }, projetos: [], eventos: [], financeiro: [] });
   const uid = session.sub;
   const user = await env.DB.prepare("SELECT name,email FROM users WHERE id=?").bind(uid).first();
-  const projetos = await projetosWithClient(env, uid);
+  const projetos = await attachArquivos(env, await projetosWithClient(env, uid));
   const ids = projetos.map((p) => p.id);
   let eventos = [], financeiro = [];
   if (ids.length) {
@@ -387,6 +400,59 @@ async function handlePortalData(env, session) {
     financeiro = (await env.DB.prepare(`SELECT ${selectList("financeiro")} FROM financeiro WHERE projeto_id IN (${ph}) AND tipo='receita' ORDER BY vencimento ASC`).bind(...ids).all()).results || [];
   }
   return json({ user, projetos, eventos, financeiro });
+}
+
+// ---------- Arquivos (R2 + metadados em D1) ----------
+const MAX_FILE = 50 * 1024 * 1024; // 50 MB
+
+async function handleUpload(request, env, url) {
+  if (!env.FILES) return json({ ok: false, error: "Armazenamento de arquivos não configurado." }, 500);
+  const projetoId = url.searchParams.get("projetoId");
+  const nome = (url.searchParams.get("nome") || "arquivo").slice(0, 180);
+  if (!projetoId) return json({ ok: false, error: "Projeto não informado." }, 400);
+  const proj = await env.DB.prepare("SELECT id FROM projetos WHERE id=?").bind(projetoId).first();
+  if (!proj) return json({ ok: false, error: "Projeto não encontrado." }, 404);
+  const len = Number(request.headers.get("content-length") || 0);
+  if (len > MAX_FILE) return json({ ok: false, error: "Arquivo acima de 50 MB." }, 413);
+  const tipo = request.headers.get("content-type") || "application/octet-stream";
+  const buf = await request.arrayBuffer();
+  if (buf.byteLength === 0) return json({ ok: false, error: "Arquivo vazio." }, 400);
+  if (buf.byteLength > MAX_FILE) return json({ ok: false, error: "Arquivo acima de 50 MB." }, 413);
+  const id = crypto.randomUUID();
+  const key = `${projetoId}/${id}`;
+  await env.FILES.put(key, buf, { httpMetadata: { contentType: tipo } });
+  const createdAt = Date.now();
+  await env.DB.prepare("INSERT INTO arquivos (id,projeto_id,nome,tamanho,tipo,r2_key,created_at) VALUES (?,?,?,?,?,?,?)")
+    .bind(id, projetoId, nome, buf.byteLength, tipo, key, createdAt).run();
+  return json({ ok: true, record: { id, projetoId, nome, tamanho: buf.byteLength, tipo, created_at: createdAt } });
+}
+
+async function handleDeleteFile(env, id) {
+  const row = await env.DB.prepare("SELECT r2_key FROM arquivos WHERE id=?").bind(id).first();
+  if (row) {
+    if (env.FILES) await env.FILES.delete(row.r2_key);
+    await env.DB.prepare("DELETE FROM arquivos WHERE id=?").bind(id).run();
+  }
+  return json({ ok: true });
+}
+
+async function handleFileDownload(request, env, id, forceDownload) {
+  const s = await sessionFrom(request, env);
+  if (!s) return new Response("Não autenticado.", { status: 401 });
+  const row = await env.DB.prepare(
+    "SELECT a.nome, a.tipo, a.r2_key, p.client_id AS clientId FROM arquivos a JOIN projetos p ON p.id = a.projeto_id WHERE a.id = ?"
+  ).bind(id).first();
+  if (!row) return new Response("Arquivo não encontrado.", { status: 404 });
+  if (s.role !== "admin" && row.clientId !== s.sub) return new Response("Acesso restrito.", { status: 403 });
+  if (!env.FILES) return new Response("Armazenamento indisponível.", { status: 500 });
+  const obj = await env.FILES.get(row.r2_key);
+  if (!obj) return new Response("Arquivo indisponível.", { status: 404 });
+  const disp = forceDownload ? "attachment" : "inline";
+  const headers = new Headers();
+  headers.set("content-type", row.tipo || "application/octet-stream");
+  headers.set("content-disposition", `${disp}; filename*=UTF-8''${encodeURIComponent(row.nome)}`);
+  headers.set("cache-control", "private, max-age=0, must-revalidate");
+  return new Response(obj.body, { headers });
 }
 
 async function handleApiData(request, env, url) {
@@ -402,6 +468,11 @@ async function handleApiData(request, env, url) {
   if (parts[1] === "admin") {
     if (!session || session.role !== "admin") return json({ ok: false, error: "Acesso restrito." }, 403);
     if (parts[2] === "data") return handleAdminData(env);
+    if (parts[2] === "arquivos") {
+      if (request.method === "POST") return handleUpload(request, env, url);
+      if (request.method === "DELETE") return handleDeleteFile(env, parts[3]);
+      return json({ ok: false, error: "Método não permitido." }, 405);
+    }
     const table = parts[2], id = parts[3];
     if (!TABLES[table]) return json({ ok: false, error: "Coleção inválida." }, 404);
     if (request.method === "POST") return handleAdminCreate(env, table, await readBody(request));
@@ -432,6 +503,10 @@ export default {
     }
     if (path === "/api/logout") return handleLogout();
     if (path === "/api/me") return handleMe(request, env);
+    if (path.startsWith("/api/files/")) {
+      const id = path.slice("/api/files/".length).split("/")[0];
+      return handleFileDownload(request, env, id, url.searchParams.get("download") === "1");
+    }
     if (path.startsWith("/api/admin/") || path.startsWith("/api/portal/")) {
       return handleApiData(request, env, url);
     }

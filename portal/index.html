@@ -66,6 +66,7 @@
   const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
   const money = v => BRL.format(Number(v) || 0);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fmtBytes = n => { n = Number(n)||0; if (n < 1024) return n+' B'; if (n < 1048576) return (n/1024).toFixed(0)+' KB'; return (n/1048576).toFixed(1)+' MB'; };
   const today = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
   const fmtDate = iso => iso ? new Date(iso+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
   const TIP = { residencial:'Residencial', comercial:'Comercial', interiores:'Interiores', urbanistico:'Urbanístico', reforma:'Reforma', consultoria:'Consultoria' };
@@ -115,6 +116,18 @@
             <div class="kv"><div class="k">Início</div><div class="v">${p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):'—'}</div></div>
           </div>
           ${p.notas?`<div class="proj-meta" style="margin-top:14px">${esc(p.notas)}</div>`:''}
+          ${(p.arquivos&&p.arquivos.length)?`
+          <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">
+            <div class="kv" style="margin-bottom:10px"><div class="k">Arquivos</div></div>
+            ${p.arquivos.map(f => `
+              <div class="li" style="padding:10px 0">
+                <div><div>${esc(f.nome)}</div><div class="meta">${fmtBytes(f.tamanho)}</div></div>
+                <div style="display:flex;gap:14px">
+                  <a href="/api/files/${f.id}" target="_blank" rel="noopener" style="color:var(--bordeaux);text-decoration:none;font-weight:600;font-size:13px">Ver</a>
+                  <a href="/api/files/${f.id}?download=1" style="color:var(--bordeaux);text-decoration:none;font-weight:600;font-size:13px">Baixar</a>
+                </div>
+              </div>`).join('')}
+          </div>`:''}
         </div>`).join('');
     } else {
       html += `<div class="empty"><strong>Seus projetos aparecerão aqui em breve.</strong>Assim que o Estúdio Gecê vincular um projeto à sua conta, ele aparece nesta página.</div>`;

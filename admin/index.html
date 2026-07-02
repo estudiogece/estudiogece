@@ -340,6 +340,72 @@ const DB = {
 /* Effective financeiro status: pendente + vencido => atrasado */
 const effFinStatus = f => (f.status === 'pendente' && f.vencimento && f.vencimento < todayISO()) ? 'atrasado' : f.status;
 const projName = id => { const p = DB.get('projetos', id); return p ? p.nome : '—'; };
+const fmtBytes = n => { n = Number(n)||0; if (n < 1024) return n+' B'; if (n < 1048576) return (n/1024).toFixed(0)+' KB'; return (n/1048576).toFixed(1)+' MB'; };
+
+/* ---------- Modal de arquivos (upload/download por projeto) ---------- */
+function openFilesModal(projeto) {
+  const root = $('#modalRoot');
+  const close = () => { root.innerHTML = ''; };
+  async function draw() {
+    const p = DB.get('projetos', projeto.id) || projeto;
+    const files = p.arquivos || [];
+    root.innerHTML = `
+      <div class="overlay" id="overlay">
+        <div class="modal" style="max-width:600px">
+          <div class="modal-head">
+            <h3>Arquivos — ${esc(p.nome)}</h3>
+            <button type="button" class="icon-btn" id="fClose" aria-label="Fechar">✕</button>
+          </div>
+          <div class="modal-body">
+            ${files.length ? files.map(f => `
+              <div class="row-item">
+                <div><div class="name">${esc(f.nome)}</div><div class="meta">${fmtBytes(f.tamanho)} · ${f.created_at?new Date(f.created_at).toLocaleDateString('pt-BR'):''}</div></div>
+                <div style="display:flex;gap:4px;align-items:center">
+                  <a class="icon-btn" href="/api/files/${f.id}" target="_blank" rel="noopener">Ver</a>
+                  <a class="icon-btn" href="/api/files/${f.id}?download=1">Baixar</a>
+                  <button class="icon-btn danger" data-delfile="${f.id}" data-name="${esc(f.nome)}">Excluir</button>
+                </div>
+              </div>`).join('') : `<div class="empty" style="padding:24px 0">Nenhum arquivo enviado ainda.</div>`}
+            <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <label class="btn ghost sm" style="cursor:pointer;margin:0">+ Enviar arquivos<input type="file" id="fileInput" multiple hidden></label>
+              <span class="sub">PDF, DWG, imagens… até 50 MB cada.</span>
+            </div>
+            <div id="upStatus" class="sub" style="margin-top:12px"></div>
+          </div>
+          <div class="modal-foot"><button type="button" class="btn subtle" id="fDone">Fechar</button></div>
+        </div>
+      </div>`;
+    $('#fClose').onclick = close;
+    $('#fDone').onclick = close;
+    $('#overlay').onclick = e => { if (e.target.id === 'overlay') close(); };
+    $('#fileInput').onchange = async e => {
+      const list = [...e.target.files]; if (!list.length) return;
+      const status = $('#upStatus');
+      for (let i = 0; i < list.length; i++) {
+        const file = list[i];
+        if (file.size > 50 * 1024 * 1024) { status.textContent = `"${file.name}" passa de 50 MB — pulado.`; continue; }
+        status.textContent = `Enviando ${i+1}/${list.length}: ${file.name}…`;
+        try {
+          const res = await fetch(`/api/admin/arquivos?projetoId=${encodeURIComponent(projeto.id)}&nome=${encodeURIComponent(file.name)}`, {
+            method: 'POST', headers: { 'content-type': file.type || 'application/octet-stream' }, body: file,
+          });
+          if (res.status === 401) { location.href = '/login'; return; }
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || data.ok === false) throw new Error(data.error || 'falha no envio');
+        } catch (err) { status.textContent = `Erro em ${file.name}: ${err.message}`; return; }
+      }
+      await DB.load(); await draw(); toast('Arquivo(s) enviado(s).');
+    };
+    root.querySelectorAll('[data-delfile]').forEach(b => b.onclick = async () => {
+      if (!confirm(`Remover "${b.dataset.name}"? Esta ação não pode ser desfeita.`)) return;
+      try {
+        await api('DELETE', `/admin/arquivos/${b.dataset.delfile}`);
+        await DB.load(); await draw(); toast('Arquivo removido.');
+      } catch (err) { toast(err.message || 'Erro ao remover.'); }
+    });
+  }
+  draw();
+}
 
 /* ---------- Modal ---------- */
 function openModal(title, bodyHTML, onSubmit, submitLabel = 'Salvar') {
@@ -474,6 +540,7 @@ function renderProjetos() {
           <td class="num">${fmtMoney(p.valor)}</td>
           <td>${p.prazo?fmtDate(p.prazo):'—'}</td>
           <td class="actions">
+            <button class="icon-btn" data-files="${p.id}">Arquivos${p.arquivos&&p.arquivos.length?` (${p.arquivos.length})`:''}</button>
             <button class="icon-btn" data-edit="${p.id}">Editar</button>
             <button class="icon-btn danger" data-del="${p.id}">Excluir</button>
           </td>
@@ -483,6 +550,7 @@ function renderProjetos() {
 
   $('#pq').oninput = e => { projFilter.q = e.target.value; renderProjetos(); const el=$('#pq'); el.focus(); el.setSelectionRange(el.value.length,el.value.length); };
   $('#pstatus').onchange = e => { projFilter.status = e.target.value; renderProjetos(); };
+  view().querySelectorAll('[data-files]').forEach(b => b.onclick = () => openFilesModal(DB.get('projetos', b.dataset.files)));
   view().querySelectorAll('[data-edit]').forEach(b => b.onclick = () => projetoForm(DB.get('projetos', b.dataset.edit)));
   view().querySelectorAll('[data-del]').forEach(b => b.onclick = () => { const p = DB.get('projetos', b.dataset.del); confirmDelete(p.nome, async () => { await DB.remove('projetos', p.id); renderProjetos(); toast('Projeto removido.'); }); });
 }

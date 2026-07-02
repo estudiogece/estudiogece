@@ -15,4 +15,7 @@
       "database_id": "5bfd77ac-4ff4-43fa-81b3-fbf59eaf3a9c"
     }
   ]
+  // NOTA: religar o binding R2 abaixo assim que o bucket for criado
+  // (R2 precisa ser habilitado no dashboard antes):
+  // "r2_buckets": [{ "binding": "FILES", "bucket_name": "estudiogece-arquivos" }]
 }

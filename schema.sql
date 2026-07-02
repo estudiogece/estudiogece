@@ -59,6 +59,17 @@ CREATE TABLE IF NOT EXISTS leads (
   created_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS arquivos (
+  id         TEXT PRIMARY KEY,
+  projeto_id TEXT REFERENCES projetos(id) ON DELETE CASCADE,
+  nome       TEXT NOT NULL,
+  tamanho    INTEGER,
+  tipo       TEXT,
+  r2_key     TEXT NOT NULL,       -- chave do objeto no bucket R2
+  created_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_arquivos_projeto ON arquivos(projeto_id);
 CREATE INDEX IF NOT EXISTS idx_projetos_client ON projetos(client_id);
 CREATE INDEX IF NOT EXISTS idx_financeiro_projeto ON financeiro(projeto_id);
 CREATE INDEX IF NOT EXISTS idx_eventos_projeto ON eventos(projeto_id);
