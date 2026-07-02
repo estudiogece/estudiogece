@@ -1,56 +1,744 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin — Estúdio Gecê</title>
-  <meta name="robots" content="noindex, nofollow" />
-  <link rel="icon" type="image/svg+xml" href="/assets/img/selo-fullcolor.svg" />
-  <link rel="icon" type="image/svg+xml" href="/assets/img/selo-fullcolor.svg" media="(prefers-color-scheme: light)" />
-  <link rel="icon" type="image/svg+xml" href="/assets/img/selo-branca.svg" media="(prefers-color-scheme: dark)" />
-  <link rel="apple-touch-icon" href="/assets/img/selo-fullcolor.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Montserrat:wght@300;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/assets/css/styles.css" />
-  <style>
-    .admin-shell { min-height: 100vh; display: flex; flex-direction: column; }
-    .admin-bar { border-bottom: 1px solid var(--line); background: var(--white); }
-    .admin-bar__inner { display: flex; align-items: center; justify-content: space-between; height: 72px; }
-    .admin-bar img { height: 32px; width: auto; }
-    .pill { font-family: var(--font-label); font-weight: 500; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--bordo); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; }
-    .admin-main { flex: 1; display: flex; align-items: center; }
-    .panel { max-width: 640px; border: 1px solid var(--line); border-left: 4px solid var(--bordo); border-radius: var(--radius); background: var(--paper); padding: clamp(28px, 5vw, 54px); }
-    .panel h1 { font-size: clamp(28px, 5vw, 46px); margin-bottom: 16px; }
-    .panel p { color: var(--ink-soft); }
-    .checklist { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 12px; }
-    .checklist li { display: flex; gap: 14px; align-items: flex-start; font-size: 15px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
-    .checklist .mono { font-family: var(--font-label); font-weight: 600; font-size: 12px; color: var(--bordo); padding-top: 2px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Estúdio Gecê — Admin</title>
+<link rel="icon" type="image/svg+xml" href="/assets/img/selo-fullcolor.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bordeaux: #561624;
+    --bordeaux-light: #7a2438;
+    --cream: #FAF7F4;
+    --ink: #211013;
+    --muted: #8a7a7d;
+    --line: #e8e0e1;
+    --ok: #3f6b4f;
+    --warn: #b3762c;
+    --danger: #a13b3b;
+    --blue: #3d6b8a;
+    --radius: 10px;
+    --shadow: 0 18px 40px -24px rgba(86,22,36,.45);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    display: flex;
+    min-height: 100vh;
+  }
+  a { color: inherit; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 240px;
+    background: var(--bordeaux);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 28px 20px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
+  .logo-mark {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: #fff; color: var(--bordeaux);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 18px;
+  }
+  .logo-text { font-size: 14px; font-weight: 600; letter-spacing: 0.04em; }
+  .logo-text span { display: block; font-size: 11px; font-weight: 400; opacity: 0.65; }
+  nav { display: flex; flex-direction: column; gap: 4px; }
+  nav a {
+    color: rgba(255,255,255,0.75);
+    text-decoration: none;
+    font-size: 14px; font-weight: 500;
+    padding: 11px 14px;
+    border-radius: var(--radius);
+    display: flex; align-items: center; gap: 10px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  nav a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  nav a.active { background: #fff; color: var(--bordeaux); }
+  nav a .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+  .sidebar-footer { margin-top: auto; font-size: 12px; color: rgba(255,255,255,0.5); padding-top: 20px; }
+  .sidebar-footer .name { color: rgba(255,255,255,0.75); font-weight: 500; }
+  .data-tools { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
+  .data-tools button {
+    font-family: inherit; font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase;
+    background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7);
+    border: none; border-radius: 6px; padding: 6px 8px; cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+  }
+  .data-tools button:hover { background: rgba(255,255,255,0.16); color: #fff; }
+
+  /* Main */
+  main { flex: 1; padding: 36px 44px; max-width: 1240px; width: 100%; }
+  header.topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; gap: 16px; flex-wrap: wrap; }
+  header.topbar h1 { font-size: 22px; font-weight: 700; }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+  .date { font-size: 13px; color: var(--muted); }
+
+  /* Buttons */
+  .btn {
+    font-family: inherit; font-size: 13.5px; font-weight: 600;
+    background: var(--bordeaux); color: #fff;
+    border: 1px solid var(--bordeaux); border-radius: var(--radius);
+    padding: 10px 16px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px;
+    transition: background .15s ease, transform .1s ease;
+  }
+  .btn:hover { background: var(--bordeaux-light); }
+  .btn:active { transform: translateY(1px); }
+  .btn.ghost { background: #fff; color: var(--bordeaux); }
+  .btn.ghost:hover { background: #f3ebec; }
+  .btn.sm { padding: 7px 12px; font-size: 12.5px; }
+  .btn.subtle { background: transparent; border-color: var(--line); color: var(--ink); }
+  .btn.subtle:hover { background: #f3ebec; }
+  .icon-btn {
+    background: none; border: none; cursor: pointer; color: var(--muted);
+    font-size: 14px; padding: 5px 7px; border-radius: 6px; font-family: inherit;
+    transition: background .15s ease, color .15s ease;
+  }
+  .icon-btn:hover { background: #f3ebec; color: var(--ink); }
+  .icon-btn.danger:hover { background: #f6dede; color: var(--danger); }
+
+  /* Cards / stats */
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
+  .stat-card .label { font-size: 12px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 8px; }
+  .stat-card .value { font-size: 26px; font-weight: 700; }
+  .stat-card .value.warn { color: var(--warn); }
+  .stat-card .value.ok { color: var(--ok); }
+  .stat-card .value.danger { color: var(--danger); }
+
+  .panels { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; }
+  .panel { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+  .panel h2 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .panel .panel-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .row-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .row-item:last-child { border-bottom: none; }
+  .row-item .name { font-weight: 500; }
+  .row-item .meta { color: var(--muted); font-size: 12px; }
+
+  /* Badges */
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; white-space: nowrap; display: inline-block; }
+  .badge.neutral   { background: #eee7e8; color: var(--muted); }
+  .badge.proposta  { background: #eee7e8; color: var(--muted); }
+  .badge.andamento { background: #e4ecf0; color: var(--blue); }
+  .badge.negociacao{ background: #fbe9d9; color: var(--warn); }
+  .badge.novo      { background: #e4ecf0; color: var(--blue); }
+  .badge.pausado   { background: #fbe9d9; color: var(--warn); }
+  .badge.pendente  { background: #fbe9d9; color: var(--warn); }
+  .badge.atrasado  { background: #f6dede; color: var(--danger); }
+  .badge.perdido   { background: #f6dede; color: var(--danger); }
+  .badge.pago      { background: #e2ede5; color: var(--ok); }
+  .badge.concluido { background: #e2ede5; color: var(--ok); }
+  .badge.ganho     { background: #e2ede5; color: var(--ok); }
+  .badge.receita   { background: #e2ede5; color: var(--ok); }
+  .badge.despesa   { background: #f6dede; color: var(--danger); }
+
+  /* Tables */
+  .card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .table-wrap { width: 100%; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  thead th {
+    text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--muted); padding: 14px 18px; border-bottom: 1px solid var(--line); background: #fbf8f6; white-space: nowrap;
+  }
+  tbody td { padding: 14px 18px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: #fdfbfa; }
+  td.strong { font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  th.num { text-align: right; }
+  td.actions { text-align: right; white-space: nowrap; }
+  .sub { color: var(--muted); font-size: 12px; }
+
+  .empty { color: var(--muted); font-size: 13.5px; padding: 44px 24px; text-align: center; }
+  .empty strong { display: block; color: var(--ink); font-weight: 600; margin-bottom: 6px; font-size: 15px; }
+
+  /* Filter bar */
+  .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .toolbar input[type=search], .toolbar select {
+    font-family: inherit; font-size: 13px; padding: 9px 12px;
+    border: 1px solid var(--line); border-radius: var(--radius); background: #fff; color: var(--ink);
+  }
+  .toolbar input[type=search] { min-width: 220px; }
+  .toolbar .spacer { flex: 1; }
+
+  /* Modal */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(33,16,19,.42);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 48px 20px; z-index: 50; overflow-y: auto;
+  }
+  .modal { background: #fff; border-radius: 14px; width: 100%; max-width: 560px; box-shadow: var(--shadow); animation: pop .16s ease; }
+  @keyframes pop { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; padding: 22px 26px; border-bottom: 1px solid var(--line); }
+  .modal-head h3 { font-size: 17px; font-weight: 700; }
+  .modal-body { padding: 22px 26px; }
+  .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 18px 26px; border-top: 1px solid var(--line); }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 6px; color: var(--ink); }
+  .field input, .field select, .field textarea {
+    width: 100%; font-family: inherit; font-size: 14px; color: var(--ink);
+    padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff;
+  }
+  .field textarea { resize: vertical; min-height: 72px; }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--bordeaux); box-shadow: 0 0 0 3px rgba(86,22,36,.1); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* Calendar */
+  .cal { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .cal-head { display: grid; grid-template-columns: repeat(7,1fr); background: #fbf8f6; border-bottom: 1px solid var(--line); }
+  .cal-head div { padding: 10px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); text-align: center; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); }
+  .cal-cell { min-height: 104px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 8px; cursor: pointer; position: relative; transition: background .12s ease; }
+  .cal-cell:nth-child(7n) { border-right: none; }
+  .cal-cell:hover { background: #fdfbfa; }
+  .cal-cell.other { background: #faf7f6; color: var(--muted); cursor: default; }
+  .cal-cell.other:hover { background: #faf7f6; }
+  .cal-cell .day-num { font-size: 12.5px; font-weight: 600; margin-bottom: 5px; }
+  .cal-cell.today .day-num { background: var(--bordeaux); color: #fff; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+  .evt-pill { font-size: 11px; padding: 3px 7px; border-radius: 5px; margin-bottom: 3px; background: #f1e6e8; color: var(--bordeaux); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+  .evt-pill .t { opacity: .7; margin-right: 4px; }
+  .cal-more { font-size: 10.5px; color: var(--muted); font-weight: 600; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: #fff; padding: 12px 20px; border-radius: 999px; font-size: 13.5px; font-weight: 500;
+    opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; z-index: 80;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 900px) {
+    body { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; position: static; flex-direction: row; align-items: center; padding: 14px 18px; gap: 18px; }
+    .logo { margin-bottom: 0; }
+    nav { flex-direction: row; flex-wrap: wrap; gap: 2px; }
+    nav a { padding: 8px 11px; }
+    nav a .dot { display: none; }
+    .sidebar-footer, .data-tools { display: none; }
+    main { padding: 24px 20px; }
+    .grid { grid-template-columns: repeat(2,1fr); }
+    .panels { grid-template-columns: 1fr; }
+    .field-row { grid-template-columns: 1fr; }
+  }
+</style>
 </head>
 <body>
-  <div class="admin-shell">
-    <div class="admin-bar">
-      <div class="wrap admin-bar__inner">
-        <img src="/assets/img/logo-gece-transp.png" alt="Estúdio Gecê" />
-        <span class="pill">Ambiente privado</span>
+
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">g</div>
+      <div class="logo-text">ESTÚDIO GECÊ<span>Painel Admin</span></div>
+    </div>
+    <nav id="nav">
+      <a href="#/dashboard"><span class="dot"></span> Dashboard</a>
+      <a href="#/projetos"><span class="dot"></span> Projetos</a>
+      <a href="#/financeiro"><span class="dot"></span> Financeiro</a>
+      <a href="#/calendario"><span class="dot"></span> Calendário</a>
+      <a href="#/leads"><span class="dot"></span> Leads</a>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="name">Gabriel Câmara</span><br>Arquiteto e Urbanista
+      <div class="data-tools">
+        <button id="btnExport">Exportar</button>
+        <button id="btnImport">Importar</button>
+        <button id="btnReset">Limpar</button>
       </div>
     </div>
-    <div class="admin-main">
-      <div class="wrap">
-        <div class="panel">
-          <p class="eyebrow">Painel do administrador</p>
-          <h1>Base pronta para o app.</h1>
-          <p>Esta é a área privada do site — onde o seu aplicativo vai morar. Por enquanto é só a casca; o próximo passo é definir o que o app faz e proteger este caminho.</p>
-          <ul class="checklist">
-            <li><span class="mono">01</span><span>Proteger <code>/admin</code> com <strong>Cloudflare Access</strong> (login só com o seu e-mail) antes de colocar dados aqui.</span></li>
-            <li><span class="mono">02</span><span>Definir a função do app (ex.: gestão de clientes, propostas, acompanhamento de obras).</span></li>
-            <li><span class="mono">03</span><span>Ligar back-end na Cloudflare: <strong>Pages/Workers Functions</strong> + banco <strong>D1</strong>.</span></li>
-          </ul>
-          <div style="margin-top:28px"><a class="btn btn--ghost" href="/">← Voltar ao site</a></div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <h1 id="pageTitle">Dashboard</h1>
+      <div class="topbar-actions" id="pageActions"></div>
+    </header>
+    <div id="view"></div>
+  </main>
+
+  <div id="modalRoot"></div>
+  <div class="toast" id="toast"></div>
+  <input type="file" id="importFile" accept="application/json" hidden>
+
+<script>
+/* ============================================================
+   Estúdio Gecê — Painel Admin (SPA, localStorage)
+   ============================================================ */
+
+/* ---------- Helpers ---------- */
+const $ = (s, r=document) => r.querySelector(s);
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + Math.random().toString(16).slice(2));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const fmtMoney = v => BRL.format(Number(v) || 0);
+const todayISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const fmtDate = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : '—';
+const fmtDateFull = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : '—';
+
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ---------- Labels ---------- */
+const T = {
+  tipologia:   { residencial:'Residencial', comercial:'Comercial', interiores:'Interiores', urbanistico:'Urbanístico', reforma:'Reforma', consultoria:'Consultoria' },
+  projStatus:  { proposta:'Proposta', andamento:'Em andamento', pausado:'Pausado', concluido:'Concluído' },
+  finTipo:     { receita:'Receita', despesa:'Despesa' },
+  finStatus:   { pendente:'Pendente', pago:'Pago', atrasado:'Atrasado' },
+  leadStatus:  { novo:'Novo', negociacao:'Em negociação', ganho:'Ganho', perdido:'Perdido' },
+  evtTipo:     { reuniao:'Reunião', visita:'Visita técnica', entrega:'Entrega', obra:'Obra', outro:'Outro' },
+};
+const options = (map, sel) => Object.entries(map).map(([v,l]) => `<option value="${v}"${v===sel?' selected':''}>${l}</option>`).join('');
+const badge = (cls, label) => `<span class="badge ${cls}">${label}</span>`;
+
+/* ---------- Data layer ---------- */
+const DB = {
+  key: 'gece_admin_v1',
+  data: {},
+  cols: ['projetos','financeiro','eventos','leads'],
+  load() {
+    try { this.data = JSON.parse(localStorage.getItem(this.key)) || {}; }
+    catch { this.data = {}; }
+    this.cols.forEach(c => { if (!Array.isArray(this.data[c])) this.data[c] = []; });
+    return this;
+  },
+  save() { localStorage.setItem(this.key, JSON.stringify(this.data)); },
+  all(c) { return this.data[c]; },
+  get(c, id) { return this.data[c].find(x => x.id === id); },
+  upsert(c, rec) {
+    if (rec.id) {
+      const i = this.data[c].findIndex(x => x.id === rec.id);
+      if (i > -1) this.data[c][i] = { ...this.data[c][i], ...rec };
+      else this.data[c].push(rec);
+    } else {
+      rec.id = uid(); rec.createdAt = Date.now();
+      this.data[c].push(rec);
+    }
+    this.save(); return rec;
+  },
+  remove(c, id) { this.data[c] = this.data[c].filter(x => x.id !== id); this.save(); },
+};
+
+/* Effective financeiro status: pendente + vencido => atrasado */
+const effFinStatus = f => (f.status === 'pendente' && f.vencimento && f.vencimento < todayISO()) ? 'atrasado' : f.status;
+const projName = id => { const p = DB.get('projetos', id); return p ? p.nome : '—'; };
+
+/* ---------- Modal ---------- */
+function openModal(title, bodyHTML, onSubmit, submitLabel = 'Salvar') {
+  const root = $('#modalRoot');
+  root.innerHTML = `
+    <div class="overlay" id="overlay">
+      <form class="modal" id="modalForm" autocomplete="off">
+        <div class="modal-head">
+          <h3>${esc(title)}</h3>
+          <button type="button" class="icon-btn" id="modalClose" aria-label="Fechar">✕</button>
         </div>
+        <div class="modal-body">${bodyHTML}</div>
+        <div class="modal-foot">
+          <button type="button" class="btn subtle" id="modalCancel">Cancelar</button>
+          <button type="submit" class="btn">${esc(submitLabel)}</button>
+        </div>
+      </form>
+    </div>`;
+  const close = () => { root.innerHTML = ''; };
+  $('#modalClose').onclick = close;
+  $('#modalCancel').onclick = close;
+  $('#overlay').onclick = e => { if (e.target.id === 'overlay') close(); };
+  document.addEventListener('keydown', function esc2(e){ if(e.key==='Escape'){ close(); document.removeEventListener('keydown', esc2);} });
+  $('#modalForm').onsubmit = e => {
+    e.preventDefault();
+    const fd = Object.fromEntries(new FormData(e.target).entries());
+    if (onSubmit(fd) !== false) close();
+  };
+  const first = root.querySelector('input,select,textarea');
+  if (first) first.focus();
+}
+
+function confirmDelete(label, onYes) {
+  openModal('Remover', `<p style="font-size:14px;color:var(--ink)">Tem certeza que deseja remover <strong>${esc(label)}</strong>? Esta ação não pode ser desfeita.</p>`,
+    () => { onYes(); return true; }, 'Remover');
+  // recolor submit as danger
+  const btn = $('#modalForm .btn[type=submit]');
+  if (btn) { btn.style.background = 'var(--danger)'; btn.style.borderColor = 'var(--danger)'; }
+}
+
+/* ============================================================
+   VIEWS
+   ============================================================ */
+const view = () => $('#view');
+const setActions = html => { $('#pageActions').innerHTML = html; };
+
+/* ---------- Dashboard ---------- */
+function renderDashboard() {
+  $('#pageTitle').textContent = 'Dashboard';
+  setActions(`<span class="date" id="today"></span>`);
+  $('#today').textContent = new Date().toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  const projetos = DB.all('projetos');
+  const fin = DB.all('financeiro');
+  const leads = DB.all('leads');
+  const eventos = DB.all('eventos');
+
+  const aReceber = fin.filter(f => f.tipo === 'receita' && effFinStatus(f) !== 'pago')
+                      .reduce((s, f) => s + (Number(f.valor)||0), 0);
+  const ativos = projetos.filter(p => p.status === 'andamento').length;
+  const pendencias = fin.filter(f => effFinStatus(f) !== 'pago').length;
+  const negociando = leads.filter(l => l.status === 'negociacao').length;
+
+  const emAndamento = projetos.filter(p => p.status === 'andamento').slice(0, 6);
+  const proximos = eventos.filter(e => e.data >= todayISO()).sort((a,b) => a.data.localeCompare(b.data)).slice(0, 6);
+
+  view().innerHTML = `
+    <section class="grid">
+      <div class="stat-card"><div class="label">A receber</div><div class="value">${fmtMoney(aReceber)}</div></div>
+      <div class="stat-card"><div class="label">Projetos ativos</div><div class="value">${ativos}</div></div>
+      <div class="stat-card"><div class="label">Pendências financeiras</div><div class="value warn">${pendencias}</div></div>
+      <div class="stat-card"><div class="label">Leads em negociação</div><div class="value ok">${negociando}</div></div>
+    </section>
+    <section class="panels">
+      <div class="panel">
+        <h2>Projetos em andamento</h2>
+        <div class="panel-sub">${emAndamento.length} de ${projetos.length} projetos</div>
+        ${emAndamento.length ? emAndamento.map(p => `
+          <div class="row-item">
+            <div><div class="name">${esc(p.nome)}</div><div class="meta">${esc(p.cliente||'—')} · ${T.tipologia[p.tipologia]||'—'}</div></div>
+            <div style="text-align:right"><div class="name">${fmtMoney(p.valor)}</div><div class="meta">${p.prazo?('prazo '+fmtDate(p.prazo)):''}</div></div>
+          </div>`).join('') : `<div class="empty">Nenhum projeto em andamento.</div>`}
       </div>
+      <div class="panel">
+        <h2>Próximos compromissos</h2>
+        <div class="panel-sub">Agenda a partir de hoje</div>
+        ${proximos.length ? proximos.map(e => `
+          <div class="row-item">
+            <div><div class="name">${esc(e.titulo)}</div><div class="meta">${T.evtTipo[e.tipo]||''}${e.hora?(' · '+e.hora):''}</div></div>
+            <div class="meta">${fmtDate(e.data)}</div>
+          </div>`).join('') : `<div class="empty">Sem eventos na agenda.</div>`}
+      </div>
+    </section>`;
+}
+
+/* ---------- Projetos ---------- */
+let projFilter = { q: '', status: '' };
+function renderProjetos() {
+  $('#pageTitle').textContent = 'Projetos';
+  setActions(`<button class="btn" id="novoProjeto">+ Novo projeto</button>`);
+  $('#novoProjeto').onclick = () => projetoForm();
+
+  let list = DB.all('projetos').slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if (projFilter.status) list = list.filter(p => p.status === projFilter.status);
+  if (projFilter.q) { const q = projFilter.q.toLowerCase(); list = list.filter(p => (p.nome+' '+(p.cliente||'')).toLowerCase().includes(q)); }
+
+  view().innerHTML = `
+    <div class="toolbar">
+      <input type="search" id="pq" placeholder="Buscar projeto ou cliente…" value="${esc(projFilter.q)}">
+      <select id="pstatus">
+        <option value="">Todos os status</option>${options(T.projStatus, projFilter.status)}
+      </select>
     </div>
-  </div>
+    <div class="card"><div class="table-wrap">
+    ${list.length ? `<table>
+      <thead><tr><th>Projeto</th><th>Cliente</th><th>Tipologia</th><th>Status</th><th class="num">Valor</th><th>Prazo</th><th></th></tr></thead>
+      <tbody>${list.map(p => `
+        <tr>
+          <td class="strong">${esc(p.nome)}</td>
+          <td>${esc(p.cliente||'—')}</td>
+          <td>${T.tipologia[p.tipologia]||'—'}</td>
+          <td>${badge(p.status, T.projStatus[p.status]||p.status)}</td>
+          <td class="num">${fmtMoney(p.valor)}</td>
+          <td>${p.prazo?fmtDate(p.prazo):'—'}</td>
+          <td class="actions">
+            <button class="icon-btn" data-edit="${p.id}">Editar</button>
+            <button class="icon-btn danger" data-del="${p.id}">Excluir</button>
+          </td>
+        </tr>`).join('')}</tbody>
+    </table>` : `<div class="empty"><strong>Nenhum projeto ${projFilter.q||projFilter.status?'encontrado':'cadastrado'}.</strong>Cadastre projetos para acompanhar prazos e valores.</div>`}
+    </div></div>`;
+
+  $('#pq').oninput = e => { projFilter.q = e.target.value; renderProjetos(); const el=$('#pq'); el.focus(); el.setSelectionRange(el.value.length,el.value.length); };
+  $('#pstatus').onchange = e => { projFilter.status = e.target.value; renderProjetos(); };
+  view().querySelectorAll('[data-edit]').forEach(b => b.onclick = () => projetoForm(DB.get('projetos', b.dataset.edit)));
+  view().querySelectorAll('[data-del]').forEach(b => b.onclick = () => { const p = DB.get('projetos', b.dataset.del); confirmDelete(p.nome, () => { DB.remove('projetos', p.id); renderProjetos(); toast('Projeto removido.'); }); });
+}
+function projetoForm(rec = {}) {
+  openModal(rec.id ? 'Editar projeto' : 'Novo projeto', `
+    <input type="hidden" name="id" value="${esc(rec.id||'')}">
+    <div class="field"><label>Nome do projeto *</label><input name="nome" required value="${esc(rec.nome||'')}" placeholder="Ex.: Residência Vila Bela"></div>
+    <div class="field-row">
+      <div class="field"><label>Cliente</label><input name="cliente" value="${esc(rec.cliente||'')}" placeholder="Nome do cliente"></div>
+      <div class="field"><label>Tipologia</label><select name="tipologia">${options(T.tipologia, rec.tipologia||'residencial')}</select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Status</label><select name="status">${options(T.projStatus, rec.status||'proposta')}</select></div>
+      <div class="field"><label>Valor do contrato (R$)</label><input name="valor" type="number" step="0.01" min="0" value="${rec.valor??''}" placeholder="0,00"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Prazo de entrega</label><input name="prazo" type="date" value="${esc(rec.prazo||'')}"></div>
+      <div class="field"><label>Local</label><input name="local" value="${esc(rec.local||'')}" placeholder="Cidade / bairro"></div>
+    </div>
+    <div class="field"><label>Observações</label><textarea name="notas" placeholder="Escopo, etapas, anotações…">${esc(rec.notas||'')}</textarea></div>
+  `, fd => { DB.upsert('projetos', { ...rec, ...fd }); renderProjetos(); toast(rec.id?'Projeto atualizado.':'Projeto cadastrado.'); });
+}
+
+/* ---------- Financeiro ---------- */
+let finFilter = { tipo: '', status: '' };
+function renderFinanceiro() {
+  $('#pageTitle').textContent = 'Financeiro';
+  setActions(`<button class="btn" id="novoLanc">+ Novo lançamento</button>`);
+  $('#novoLanc').onclick = () => finForm();
+
+  const all = DB.all('financeiro');
+  const aReceber = all.filter(f => f.tipo==='receita' && effFinStatus(f)!=='pago').reduce((s,f)=>s+(Number(f.valor)||0),0);
+  const aPagar   = all.filter(f => f.tipo==='despesa' && effFinStatus(f)!=='pago').reduce((s,f)=>s+(Number(f.valor)||0),0);
+  const recebido = all.filter(f => f.tipo==='receita' && effFinStatus(f)==='pago').reduce((s,f)=>s+(Number(f.valor)||0),0);
+
+  let list = all.slice().sort((a,b)=>(b.vencimento||'').localeCompare(a.vencimento||''));
+  if (finFilter.tipo) list = list.filter(f => f.tipo === finFilter.tipo);
+  if (finFilter.status) list = list.filter(f => effFinStatus(f) === finFilter.status);
+
+  view().innerHTML = `
+    <section class="grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card"><div class="label">A receber</div><div class="value ok">${fmtMoney(aReceber)}</div></div>
+      <div class="stat-card"><div class="label">A pagar</div><div class="value danger">${fmtMoney(aPagar)}</div></div>
+      <div class="stat-card"><div class="label">Recebido (quitado)</div><div class="value">${fmtMoney(recebido)}</div></div>
+    </section>
+    <div class="toolbar">
+      <select id="ftipo"><option value="">Receitas e despesas</option>${options(T.finTipo, finFilter.tipo)}</select>
+      <select id="fstatus"><option value="">Todos os status</option>${options(T.finStatus, finFilter.status)}</select>
+    </div>
+    <div class="card"><div class="table-wrap">
+    ${list.length ? `<table>
+      <thead><tr><th>Descrição</th><th>Projeto</th><th>Tipo</th><th>Vencimento</th><th>Status</th><th class="num">Valor</th><th></th></tr></thead>
+      <tbody>${list.map(f => { const st = effFinStatus(f); return `
+        <tr>
+          <td class="strong">${esc(f.descricao)}</td>
+          <td>${f.projetoId?esc(projName(f.projetoId)):'<span class="sub">—</span>'}</td>
+          <td>${badge(f.tipo, T.finTipo[f.tipo])}</td>
+          <td>${fmtDate(f.vencimento)}</td>
+          <td>${badge(st, T.finStatus[st])}</td>
+          <td class="num" style="color:${f.tipo==='despesa'?'var(--danger)':'var(--ok)'}">${f.tipo==='despesa'?'- ':''}${fmtMoney(f.valor)}</td>
+          <td class="actions">
+            ${st!=='pago'?`<button class="icon-btn" data-pay="${f.id}">Quitar</button>`:''}
+            <button class="icon-btn" data-edit="${f.id}">Editar</button>
+            <button class="icon-btn danger" data-del="${f.id}">Excluir</button>
+          </td>
+        </tr>`; }).join('')}</tbody>
+    </table>` : `<div class="empty"><strong>Nenhum lançamento ${finFilter.tipo||finFilter.status?'encontrado':'registrado'}.</strong>Registre receitas e despesas para controlar o fluxo de caixa.</div>`}
+    </div></div>`;
+
+  $('#ftipo').onchange = e => { finFilter.tipo = e.target.value; renderFinanceiro(); };
+  $('#fstatus').onchange = e => { finFilter.status = e.target.value; renderFinanceiro(); };
+  view().querySelectorAll('[data-pay]').forEach(b => b.onclick = () => { DB.upsert('financeiro', { ...DB.get('financeiro', b.dataset.pay), status:'pago' }); renderFinanceiro(); toast('Lançamento quitado.'); });
+  view().querySelectorAll('[data-edit]').forEach(b => b.onclick = () => finForm(DB.get('financeiro', b.dataset.edit)));
+  view().querySelectorAll('[data-del]').forEach(b => b.onclick = () => { const f = DB.get('financeiro', b.dataset.del); confirmDelete(f.descricao, () => { DB.remove('financeiro', f.id); renderFinanceiro(); toast('Lançamento removido.'); }); });
+}
+function finForm(rec = {}) {
+  const projOpts = `<option value="">— Nenhum —</option>` + DB.all('projetos').map(p => `<option value="${p.id}"${p.id===rec.projetoId?' selected':''}>${esc(p.nome)}</option>`).join('');
+  openModal(rec.id ? 'Editar lançamento' : 'Novo lançamento', `
+    <input type="hidden" name="id" value="${esc(rec.id||'')}">
+    <div class="field"><label>Descrição *</label><input name="descricao" required value="${esc(rec.descricao||'')}" placeholder="Ex.: 1ª parcela do projeto"></div>
+    <div class="field-row">
+      <div class="field"><label>Tipo</label><select name="tipo">${options(T.finTipo, rec.tipo||'receita')}</select></div>
+      <div class="field"><label>Valor (R$) *</label><input name="valor" type="number" step="0.01" min="0" required value="${rec.valor??''}" placeholder="0,00"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Vencimento</label><input name="vencimento" type="date" value="${esc(rec.vencimento||todayISO())}"></div>
+      <div class="field"><label>Status</label><select name="status">${options({pendente:'Pendente',pago:'Pago'}, rec.status==='atrasado'?'pendente':(rec.status||'pendente'))}</select></div>
+    </div>
+    <div class="field"><label>Projeto vinculado</label><select name="projetoId">${projOpts}</select></div>
+  `, fd => { DB.upsert('financeiro', { ...rec, ...fd }); renderFinanceiro(); toast(rec.id?'Lançamento atualizado.':'Lançamento registrado.'); });
+}
+
+/* ---------- Calendário ---------- */
+const WEEK = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+let calState = { y: new Date().getFullYear(), m: new Date().getMonth() };
+function renderCalendario() {
+  $('#pageTitle').textContent = 'Calendário';
+  setActions(`
+    <button class="btn subtle sm" id="calPrev">‹</button>
+    <button class="btn subtle sm" id="calToday">Hoje</button>
+    <button class="btn subtle sm" id="calNext">›</button>
+    <button class="btn" id="novoEvento">+ Novo evento</button>`);
+
+  const { y, m } = calState;
+  const monthName = new Date(y, m, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const first = new Date(y, m, 1).getDay();
+  const days = new Date(y, m + 1, 0).getDate();
+  const eventos = DB.all('eventos');
+  const byDay = {};
+  eventos.forEach(e => { (byDay[e.data] = byDay[e.data] || []).push(e); });
+
+  const cells = [];
+  for (let i = 0; i < first; i++) cells.push(`<div class="cal-cell other"></div>`);
+  for (let d = 1; d <= days; d++) {
+    const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const evs = (byDay[iso] || []).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+    const isToday = iso === todayISO();
+    const shown = evs.slice(0, 3).map(e => `<div class="evt-pill" data-edit="${e.id}" title="${esc(e.titulo)}">${e.hora?`<span class="t">${e.hora}</span>`:''}${esc(e.titulo)}</div>`).join('');
+    const more = evs.length > 3 ? `<div class="cal-more">+${evs.length - 3} mais</div>` : '';
+    cells.push(`<div class="cal-cell${isToday?' today':''}" data-day="${iso}"><div class="day-num">${d}</div>${shown}${more}</div>`);
+  }
+  while (cells.length % 7 !== 0) cells.push(`<div class="cal-cell other"></div>`);
+
+  view().innerHTML = `
+    <div style="margin-bottom:14px;font-size:15px;font-weight:600;text-transform:capitalize">${monthName}</div>
+    <div class="cal">
+      <div class="cal-head">${WEEK.map(w => `<div>${w}</div>`).join('')}</div>
+      <div class="cal-grid">${cells.join('')}</div>
+    </div>`;
+
+  $('#calPrev').onclick = () => { calState.m--; if (calState.m < 0){ calState.m = 11; calState.y--; } renderCalendario(); };
+  $('#calNext').onclick = () => { calState.m++; if (calState.m > 11){ calState.m = 0; calState.y++; } renderCalendario(); };
+  $('#calToday').onclick = () => { calState = { y:new Date().getFullYear(), m:new Date().getMonth() }; renderCalendario(); };
+  $('#novoEvento').onclick = () => eventoForm();
+  view().querySelectorAll('.cal-cell[data-day]').forEach(c => c.onclick = e => { if (e.target.closest('.evt-pill')) return; eventoForm({ data: c.dataset.day }); });
+  view().querySelectorAll('.evt-pill[data-edit]').forEach(p => p.onclick = () => eventoForm(DB.get('eventos', p.dataset.edit)));
+}
+function eventoForm(rec = {}) {
+  const projOpts = `<option value="">— Nenhum —</option>` + DB.all('projetos').map(p => `<option value="${p.id}"${p.id===rec.projetoId?' selected':''}>${esc(p.nome)}</option>`).join('');
+  openModal(rec.id ? 'Editar evento' : 'Novo evento', `
+    <input type="hidden" name="id" value="${esc(rec.id||'')}">
+    <div class="field"><label>Título *</label><input name="titulo" required value="${esc(rec.titulo||'')}" placeholder="Ex.: Reunião de briefing"></div>
+    <div class="field-row">
+      <div class="field"><label>Data *</label><input name="data" type="date" required value="${esc(rec.data||todayISO())}"></div>
+      <div class="field"><label>Hora</label><input name="hora" type="time" value="${esc(rec.hora||'')}"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Tipo</label><select name="tipo">${options(T.evtTipo, rec.tipo||'reuniao')}</select></div>
+      <div class="field"><label>Projeto vinculado</label><select name="projetoId">${projOpts}</select></div>
+    </div>
+    <div class="field"><label>Notas</label><textarea name="notas" placeholder="Local, participantes, pauta…">${esc(rec.notas||'')}</textarea></div>
+    ${rec.id?`<button type="button" class="btn subtle sm" id="evtDel" style="color:var(--danger)">Excluir evento</button>`:''}
+  `, fd => { DB.upsert('eventos', { ...rec, ...fd }); renderCalendario(); toast(rec.id?'Evento atualizado.':'Evento criado.'); });
+  const del = $('#evtDel');
+  if (del) del.onclick = () => { DB.remove('eventos', rec.id); $('#modalRoot').innerHTML=''; renderCalendario(); toast('Evento removido.'); };
+}
+
+/* ---------- Leads ---------- */
+let leadFilter = { q: '', status: '' };
+function renderLeads() {
+  $('#pageTitle').textContent = 'Leads';
+  setActions(`<button class="btn" id="novoLead">+ Novo lead</button>`);
+  $('#novoLead').onclick = () => leadForm();
+
+  let list = DB.all('leads').slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if (leadFilter.status) list = list.filter(l => l.status === leadFilter.status);
+  if (leadFilter.q) { const q = leadFilter.q.toLowerCase(); list = list.filter(l => (l.nome+' '+(l.contato||'')).toLowerCase().includes(q)); }
+
+  view().innerHTML = `
+    <div class="toolbar">
+      <input type="search" id="lq" placeholder="Buscar lead ou contato…" value="${esc(leadFilter.q)}">
+      <select id="lstatus"><option value="">Todos os status</option>${options(T.leadStatus, leadFilter.status)}</select>
+    </div>
+    <div class="card"><div class="table-wrap">
+    ${list.length ? `<table>
+      <thead><tr><th>Nome</th><th>Contato</th><th>Origem</th><th>Interesse</th><th>Status</th><th class="num">Valor est.</th><th></th></tr></thead>
+      <tbody>${list.map(l => `
+        <tr>
+          <td class="strong">${esc(l.nome)}</td>
+          <td>${esc(l.contato||'—')}</td>
+          <td>${esc(l.origem||'—')}</td>
+          <td>${T.tipologia[l.interesse]||'—'}</td>
+          <td>${badge(l.status, T.leadStatus[l.status]||l.status)}</td>
+          <td class="num">${l.valor?fmtMoney(l.valor):'—'}</td>
+          <td class="actions">
+            <button class="icon-btn" data-edit="${l.id}">Editar</button>
+            <button class="icon-btn danger" data-del="${l.id}">Excluir</button>
+          </td>
+        </tr>`).join('')}</tbody>
+    </table>` : `<div class="empty"><strong>Nenhum lead ${leadFilter.q||leadFilter.status?'encontrado':'cadastrado'}.</strong>Registre contatos e oportunidades para acompanhar a negociação.</div>`}
+    </div></div>`;
+
+  $('#lq').oninput = e => { leadFilter.q = e.target.value; renderLeads(); const el=$('#lq'); el.focus(); el.setSelectionRange(el.value.length,el.value.length); };
+  $('#lstatus').onchange = e => { leadFilter.status = e.target.value; renderLeads(); };
+  view().querySelectorAll('[data-edit]').forEach(b => b.onclick = () => leadForm(DB.get('leads', b.dataset.edit)));
+  view().querySelectorAll('[data-del]').forEach(b => b.onclick = () => { const l = DB.get('leads', b.dataset.del); confirmDelete(l.nome, () => { DB.remove('leads', l.id); renderLeads(); toast('Lead removido.'); }); });
+}
+function leadForm(rec = {}) {
+  openModal(rec.id ? 'Editar lead' : 'Novo lead', `
+    <input type="hidden" name="id" value="${esc(rec.id||'')}">
+    <div class="field"><label>Nome *</label><input name="nome" required value="${esc(rec.nome||'')}" placeholder="Nome do contato"></div>
+    <div class="field-row">
+      <div class="field"><label>Contato</label><input name="contato" value="${esc(rec.contato||'')}" placeholder="Telefone ou e-mail"></div>
+      <div class="field"><label>Origem</label><input name="origem" value="${esc(rec.origem||'')}" placeholder="Instagram, indicação…"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Interesse</label><select name="interesse">${options(T.tipologia, rec.interesse||'residencial')}</select></div>
+      <div class="field"><label>Status</label><select name="status">${options(T.leadStatus, rec.status||'novo')}</select></div>
+    </div>
+    <div class="field"><label>Valor estimado (R$)</label><input name="valor" type="number" step="0.01" min="0" value="${rec.valor??''}" placeholder="0,00"></div>
+    <div class="field"><label>Observações</label><textarea name="notas" placeholder="Necessidade, próximos passos…">${esc(rec.notas||'')}</textarea></div>
+  `, fd => { DB.upsert('leads', { ...rec, ...fd }); renderLeads(); toast(rec.id?'Lead atualizado.':'Lead cadastrado.'); });
+}
+
+/* ============================================================
+   ROUTER
+   ============================================================ */
+const ROUTES = {
+  dashboard: renderDashboard,
+  projetos: renderProjetos,
+  financeiro: renderFinanceiro,
+  calendario: renderCalendario,
+  leads: renderLeads,
+};
+function currentRoute() {
+  const h = location.hash.replace(/^#\/?/, '');
+  return ROUTES[h] ? h : 'dashboard';
+}
+function router() {
+  const r = currentRoute();
+  document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('active', a.getAttribute('href') === `#/${r}`));
+  $('#modalRoot').innerHTML = '';
+  ROUTES[r]();
+}
+window.addEventListener('hashchange', router);
+
+/* ---------- Data tools (export / import / reset) ---------- */
+$('#btnExport').onclick = () => {
+  const blob = new Blob([JSON.stringify(DB.data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `gece-admin-${todayISO()}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Backup exportado.');
+};
+$('#btnImport').onclick = () => $('#importFile').click();
+$('#importFile').onchange = e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const obj = JSON.parse(reader.result);
+      DB.cols.forEach(c => { if (Array.isArray(obj[c])) DB.data[c] = obj[c]; });
+      DB.save(); router(); toast('Dados importados.');
+    } catch { toast('Arquivo inválido.'); }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+};
+$('#btnReset').onclick = () => {
+  confirmDelete('todos os dados do painel', () => {
+    DB.data = {}; DB.cols.forEach(c => DB.data[c] = []); DB.save(); router(); toast('Dados apagados.');
+  });
+};
+
+/* ---------- Boot ---------- */
+DB.load();
+if (!location.hash) location.hash = '#/dashboard';
+router();
+</script>
 </body>
 </html>
