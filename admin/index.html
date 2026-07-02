@@ -9,6 +9,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<!-- Google Picker (seleção de arquivos/pastas do Drive) -->
+<script src="https://apis.google.com/js/api.js" async defer></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root {
     --bordeaux: #561624;
@@ -342,6 +345,49 @@ const effFinStatus = f => (f.status === 'pendente' && f.vencimento && f.vencimen
 const projName = id => { const p = DB.get('projetos', id); return p ? p.nome : '—'; };
 const linkHost = u => { try { return new URL(u).hostname.replace(/^www\./,''); } catch { return u; } };
 
+/* ---------- Google Drive Picker ----------
+   Preencha apiKey e clientId (obtidos no Google Cloud Console) para ligar o
+   botão "Escolher no Google Drive". Vazio = botão fica oculto (só link manual). */
+const GDRIVE = {
+  apiKey: '',      // API key restrita ao domínio + Google Picker API
+  clientId: '',    // OAuth 2.0 Client ID (aplicação web)
+  scope: 'https://www.googleapis.com/auth/drive.readonly',
+  token: null, tokenClient: null, pickerReady: false, onPick: null,
+  enabled() { return !!(this.apiKey && this.clientId); },
+  ready() { return !!(window.google && google.accounts && google.accounts.oauth2 && window.gapi); },
+  choose(onPick) {
+    if (!this.enabled()) return;
+    this.onPick = onPick;
+    if (!this.ready()) { toast('Google Drive ainda carregando — tente de novo em 1s.'); return; }
+    if (!this.tokenClient) {
+      this.tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: this.clientId, scope: this.scope,
+        callback: (r) => { if (r && r.access_token) { this.token = r.access_token; this.show(); } },
+      });
+    }
+    if (this.token) this.show();
+    else this.tokenClient.requestAccessToken({ prompt: '' });
+  },
+  show() {
+    if (!this.pickerReady) { gapi.load('picker', () => { this.pickerReady = true; this.show(); }); return; }
+    const files = new google.picker.DocsView().setIncludeFolders(true).setSelectFolderEnabled(true);
+    const folders = new google.picker.DocsView(google.picker.ViewId.FOLDERS).setSelectFolderEnabled(true);
+    const picker = new google.picker.PickerBuilder()
+      .setDeveloperKey(this.apiKey)
+      .setOAuthToken(this.token)
+      .addView(files)
+      .addView(folders)
+      .setCallback((data) => {
+        if (data.action === google.picker.Action.PICKED && data.docs && data.docs[0]) {
+          const d = data.docs[0];
+          this.onPick && this.onPick(d.name, d.url || `https://drive.google.com/open?id=${d.id}`);
+        }
+      })
+      .build();
+    picker.setVisible(true);
+  },
+};
+
 /* ---------- Modal de arquivos (links do Google Drive por projeto) ---------- */
 function openFilesModal(projeto) {
   const root = $('#modalRoot');
@@ -366,10 +412,11 @@ function openFilesModal(projeto) {
                 </div>
               </div>`).join('') : `<div class="empty" style="padding:24px 0">Nenhum arquivo vinculado ainda.</div>`}
             <form id="linkForm" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">
+              ${GDRIVE.enabled() ? `<button type="button" class="btn ghost sm" id="pickDrive" style="margin-bottom:14px">📁 Escolher no Google Drive</button>` : ''}
               <div class="field" style="margin-bottom:12px"><label>Nome do arquivo</label><input name="nome" required placeholder="Ex.: Projeto executivo (PDF)"></div>
               <div class="field" style="margin-bottom:12px"><label>Link do Google Drive</label><input name="url" type="url" required placeholder="https://drive.google.com/…"></div>
               <button type="submit" class="btn sm">+ Vincular arquivo</button>
-              <span class="sub" style="margin-left:10px">Cole o link de compartilhamento do Drive.</span>
+              <span class="sub" style="margin-left:10px">${GDRIVE.enabled() ? 'Escolha no Drive ou cole o link.' : 'Cole o link de compartilhamento do Drive.'}</span>
             </form>
           </div>
           <div class="modal-foot"><button type="button" class="btn subtle" id="fDone">Fechar</button></div>
@@ -378,6 +425,12 @@ function openFilesModal(projeto) {
     $('#fClose').onclick = close;
     $('#fDone').onclick = close;
     $('#overlay').onclick = e => { if (e.target.id === 'overlay') close(); };
+    const pick = $('#pickDrive');
+    if (pick) pick.onclick = () => GDRIVE.choose((nome, url) => {
+      const f = $('#linkForm');
+      f.querySelector('[name=nome]').value = nome;
+      f.querySelector('[name=url]').value = url;
+    });
     $('#linkForm').onsubmit = async e => {
       e.preventDefault();
       const fd = Object.fromEntries(new FormData(e.target).entries());
