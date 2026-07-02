@@ -256,6 +256,7 @@
         <button id="btnExport">Exportar</button>
         <button id="btnImport">Importar</button>
         <button id="btnReset">Limpar</button>
+        <button id="btnLogout">Sair</button>
       </div>
     </div>
   </aside>
@@ -733,6 +734,10 @@ $('#btnReset').onclick = () => {
   confirmDelete('todos os dados do painel', () => {
     DB.data = {}; DB.cols.forEach(c => DB.data[c] = []); DB.save(); router(); toast('Dados apagados.');
   });
+};
+$('#btnLogout').onclick = async () => {
+  try { await fetch('/api/logout', { method: 'POST' }); } catch {}
+  location.href = '/login';
 };
 
 /* ---------- Boot ---------- */

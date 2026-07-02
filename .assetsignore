@@ -5,4 +5,7 @@ wrangler.jsonc
 .assetsignore
 .gitignore
 README.md
+NOTES.md
+.wrangler/
+.claude/
 functions/

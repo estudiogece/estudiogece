@@ -179,15 +179,143 @@ async function handleOrcamento(request, env) {
   }
 }
 
+// ============================================================
+// Autenticação (login próprio, sessão por cookie assinado — HMAC).
+// Fase 1: conta única de administrador (ADMIN_EMAIL + secret ADMIN_PASSWORD).
+// Futuro: substituir a verificação por consulta a contas em banco (D1)
+// para permitir que clientes criem conta e acessem seus projetos.
+// Secrets necessários no Worker: ADMIN_PASSWORD, SESSION_SECRET.
+// ============================================================
+const ADMIN_EMAIL = "gcamara@estudiogece.com.br";
+const SESSION_COOKIE = "gece_session";
+const SESSION_TTL = 60 * 60 * 24 * 7; // 7 dias
+
+const _enc = new TextEncoder();
+const _dec = new TextDecoder();
+
+function bytesToB64url(bytes) {
+  let bin = "";
+  bytes.forEach((b) => (bin += String.fromCharCode(b)));
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function b64urlToBytes(str) {
+  str = str.replace(/-/g, "+").replace(/_/g, "/");
+  const bin = atob(str);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+const strToB64url = (s) => bytesToB64url(_enc.encode(s));
+const b64urlToStr = (s) => _dec.decode(b64urlToBytes(s));
+
+function safeEqual(a, b) {
+  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
+  let r = 0;
+  for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return r === 0;
+}
+
+async function hmacKey(secret) {
+  return crypto.subtle.importKey(
+    "raw",
+    _enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"]
+  );
+}
+async function signSession(email, secret) {
+  const payload = { sub: email, exp: Math.floor(Date.now() / 1000) + SESSION_TTL };
+  const data = strToB64url(JSON.stringify(payload));
+  const key = await hmacKey(secret);
+  const sig = await crypto.subtle.sign("HMAC", key, _enc.encode(data));
+  return data + "." + bytesToB64url(new Uint8Array(sig));
+}
+async function verifySession(token, secret) {
+  if (!token || token.indexOf(".") < 0) return null;
+  const [data, sig] = token.split(".");
+  try {
+    const key = await hmacKey(secret);
+    const ok = await crypto.subtle.verify("HMAC", key, b64urlToBytes(sig), _enc.encode(data));
+    if (!ok) return null;
+    const payload = JSON.parse(b64urlToStr(data));
+    if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+function getCookie(request, name) {
+  const raw = request.headers.get("Cookie") || "";
+  const m = raw.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+function sessionCookie(token, maxAge) {
+  return `${SESSION_COOKIE}=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${maxAge}`;
+}
+
+async function isAuthed(request, env) {
+  if (!env.SESSION_SECRET) return false;
+  return !!(await verifySession(getCookie(request, SESSION_COOKIE), env.SESSION_SECRET));
+}
+
+async function handleLogin(request, env) {
+  if (!env.SESSION_SECRET || !env.ADMIN_PASSWORD) {
+    return json({ ok: false, error: "Login não configurado no servidor." }, 500);
+  }
+  let data = {};
+  const ct = request.headers.get("content-type") || "";
+  if (ct.includes("application/json")) data = await request.json();
+  else {
+    const fd = await request.formData();
+    for (const k of fd.keys()) data[k] = fd.get(k);
+  }
+  const email = String(data.email || "").trim().toLowerCase();
+  const senha = String(data.senha || "");
+  const ok = safeEqual(email, ADMIN_EMAIL.toLowerCase()) & safeEqual(senha, env.ADMIN_PASSWORD);
+  if (!ok) {
+    await new Promise((r) => setTimeout(r, 500)); // penalidade leve contra brute force
+    return json({ ok: false, error: "E-mail ou senha inválidos." }, 401);
+  }
+  const token = await signSession(ADMIN_EMAIL, env.SESSION_SECRET);
+  return new Response(JSON.stringify({ ok: true }), {
+    status: 200,
+    headers: { "content-type": "application/json", "Set-Cookie": sessionCookie(token, SESSION_TTL) },
+  });
+}
+
+function handleLogout() {
+  return new Response(JSON.stringify({ ok: true }), {
+    status: 200,
+    headers: { "content-type": "application/json", "Set-Cookie": sessionCookie("", 0) },
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === "/api/orcamento") {
-      if (request.method !== "POST") {
-        return json({ ok: false, error: "Método não permitido." }, 405);
-      }
+    const path = url.pathname;
+
+    if (path === "/api/orcamento") {
+      if (request.method !== "POST") return json({ ok: false, error: "Método não permitido." }, 405);
       return handleOrcamento(request, env);
     }
+    if (path === "/api/login") {
+      if (request.method !== "POST") return json({ ok: false, error: "Método não permitido." }, 405);
+      return handleLogin(request, env);
+    }
+    if (path === "/api/logout") return handleLogout();
+
+    // Área privada: exige sessão válida, senão manda para o login.
+    if (path === "/admin" || path.startsWith("/admin/")) {
+      if (!(await isAuthed(request, env))) {
+        const to = new URL("/login", url.origin);
+        to.searchParams.set("next", path);
+        return Response.redirect(to.toString(), 302);
+      }
+    }
+
     // Todo o restante é servido pelo site estático.
     return env.ASSETS.fetch(request);
   },

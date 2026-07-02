@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Entrar — Estúdio Gecê</title>
+<link rel="icon" type="image/svg+xml" href="/assets/img/selo-fullcolor.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+  :root { --bordeaux:#561624; --bordeaux-light:#7a2438; --cream:#FAF7F4; --ink:#211013; --muted:#8a7a7d; --line:#e8e0e1; --danger:#a13b3b; --radius:10px; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:16px; box-shadow:0 30px 60px -40px rgba(86,22,36,.5); width:100%; max-width:400px; padding:38px 34px; }
+  .brand { display:flex; align-items:center; gap:12px; margin-bottom:28px; }
+  .mark { width:40px; height:40px; border-radius:50%; background:var(--bordeaux); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:20px; }
+  .brand .txt { font-size:14px; font-weight:600; letter-spacing:.04em; }
+  .brand .txt span { display:block; font-size:11px; font-weight:400; opacity:.6; }
+  h1 { font-size:20px; font-weight:700; margin-bottom:4px; }
+  .sub { font-size:13.5px; color:var(--muted); margin-bottom:24px; }
+  .field { margin-bottom:16px; }
+  .field label { display:block; font-size:12.5px; font-weight:600; margin-bottom:6px; }
+  .field input { width:100%; font-family:inherit; font-size:15px; padding:11px 13px; border:1px solid var(--line); border-radius:var(--radius); color:var(--ink); }
+  .field input:focus { outline:none; border-color:var(--bordeaux); box-shadow:0 0 0 3px rgba(86,22,36,.1); }
+  .btn { width:100%; font-family:inherit; font-size:15px; font-weight:600; background:var(--bordeaux); color:#fff; border:none; border-radius:var(--radius); padding:13px; cursor:pointer; transition:background .15s ease; margin-top:6px; }
+  .btn:hover { background:var(--bordeaux-light); }
+  .btn:disabled { opacity:.6; cursor:default; }
+  .msg { font-size:13px; color:var(--danger); background:#f6dede; border-radius:var(--radius); padding:10px 12px; margin-bottom:16px; display:none; }
+  .msg.show { display:block; }
+  .foot { margin-top:22px; font-size:12.5px; color:var(--muted); text-align:center; }
+  .foot a { color:var(--bordeaux); text-decoration:none; }
+</style>
+</head>
+<body>
+  <form class="card" id="loginForm" autocomplete="on">
+    <div class="brand">
+      <div class="mark">g</div>
+      <div class="txt">ESTÚDIO GECÊ<span>Área privada</span></div>
+    </div>
+    <h1>Entrar</h1>
+    <p class="sub">Acesse o painel com suas credenciais.</p>
+    <div class="msg" id="msg"></div>
+    <div class="field">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" name="email" required autocomplete="username" placeholder="voce@estudiogece.com.br">
+    </div>
+    <div class="field">
+      <label for="senha">Senha</label>
+      <input type="password" id="senha" name="senha" required autocomplete="current-password" placeholder="••••••••">
+    </div>
+    <button class="btn" type="submit" id="btn">Entrar</button>
+    <div class="foot"><a href="/">← Voltar ao site</a></div>
+  </form>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const next = params.get('next') || '/admin/';
+  const form = document.getElementById('loginForm');
+  const msg = document.getElementById('msg');
+  const btn = document.getElementById('btn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msg.classList.remove('show');
+    btn.disabled = true; btn.textContent = 'Entrando…';
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('email').value,
+          senha: document.getElementById('senha').value,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        location.href = next.startsWith('/') ? next : '/admin/';
+      } else {
+        msg.textContent = data.error || 'Não foi possível entrar.';
+        msg.classList.add('show');
+      }
+    } catch {
+      msg.textContent = 'Erro de conexão. Tente novamente.';
+      msg.classList.add('show');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Entrar';
+    }
+  });
+</script>
+</body>
+</html>
