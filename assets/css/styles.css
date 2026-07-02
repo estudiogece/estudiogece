@@ -106,6 +106,15 @@ p { margin: 0; }
   transition: background .18s ease;
 }
 .nav__cta:hover { background: var(--bordo-deep); }
+.nav__ghost {
+  font-family: var(--font-label);
+  font-weight: 500;
+  font-size: 13px; letter-spacing: 0.04em;
+  border: 1px solid var(--bordo); color: var(--bordo) !important;
+  padding: 10px 18px; border-radius: var(--radius);
+  transition: background .18s ease, color .18s ease;
+}
+.nav__ghost:hover { background: var(--bordo); color: var(--white) !important; }
 .nav-toggle { display: none; }
 
 /* Hero — composição split da marca */
@@ -300,7 +309,8 @@ p { margin: 0; }
     background: var(--white); border-bottom: 1px solid var(--line); padding: 8px var(--gutter) 20px;
   }
   .nav.is-open a { padding: 14px 0; border-bottom: 1px solid var(--line); }
-  .nav.is-open .nav__cta { margin-top: 12px; text-align: center; }
+  .nav.is-open .nav__ghost { margin-top: 12px; text-align: center; border-bottom: none; }
+  .nav.is-open .nav__cta { margin-top: 8px; text-align: center; }
   .nav-toggle { display: inline-flex; flex-direction: column; gap: 5px; background: none; border: 0; cursor: pointer; padding: 8px; }
   .nav-toggle span { width: 24px; height: 2px; background: var(--bordo); display: block; }
   .services__list { grid-template-columns: 1fr; }
