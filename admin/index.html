@@ -217,6 +217,31 @@
   .evt-pill .t { opacity: .7; margin-right: 4px; }
   .cal-more { font-size: 10.5px; color: var(--muted); font-weight: 600; }
 
+  /* Alternador Mês/Semana */
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .seg-btn { font-family: inherit; font-size: 12.5px; font-weight: 600; background: #fff; color: var(--ink); border: none; padding: 8px 14px; cursor: pointer; transition: background .12s ease; }
+  .seg-btn:hover { background: #f3ebec; }
+  .seg-btn.active { background: var(--bordeaux); color: #fff; }
+  .seg-btn.active:hover { background: var(--bordeaux); }
+  /* Visão semanal */
+  .wk-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .wk-col { min-height: 340px; border-right: 1px solid var(--line); cursor: pointer; transition: background .12s ease; }
+  .wk-col:last-child { border-right: none; }
+  .wk-col:hover { background: #fdfbfa; }
+  .wk-head { text-align: center; padding: 10px 4px; border-bottom: 1px solid var(--line); }
+  .wk-col.today .wk-head { background: var(--bordeaux); color: #fff; }
+  .wk-dow { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .wk-col.today .wk-dow { color: rgba(255,255,255,.8); }
+  .wk-dnum { font-size: 18px; font-weight: 700; }
+  .wk-body { padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+  .wk-body .evt-pill { white-space: normal; }
+  @media (max-width: 680px) {
+    .wk-grid { grid-template-columns: 1fr; }
+    .wk-col { min-height: auto; border-right: none; border-bottom: 1px solid var(--line); display: flex; align-items: stretch; }
+    .wk-head { border-bottom: none; border-right: 1px solid var(--line); min-width: 72px; display: flex; flex-direction: column; justify-content: center; }
+    .wk-body { flex: 1; }
+  }
+
   .toast {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
     background: var(--ink); color: #fff; padding: 12px 20px; border-radius: 999px; font-size: 13.5px; font-weight: 500;
@@ -694,15 +719,40 @@ function finForm(rec = {}) {
 
 /* ---------- Calendário ---------- */
 const WEEK = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-let calState = { y: new Date().getFullYear(), m: new Date().getMonth() };
+let calState = { view: 'mes', y: new Date().getFullYear(), m: new Date().getMonth(), anchor: todayISO() };
+const isoToDate = iso => new Date(iso + 'T00:00:00');
+const dateToISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const shiftDays = (iso, n) => { const d = isoToDate(iso); d.setDate(d.getDate()+n); return dateToISO(d); };
+const weekStart = iso => { const d = isoToDate(iso); d.setDate(d.getDate()-d.getDay()); return dateToISO(d); };
+
 function renderCalendario() {
   $('#pageTitle').textContent = 'Calendário';
   setActions(`
+    <div class="seg">
+      <button class="seg-btn${calState.view==='mes'?' active':''}" id="calMes">Mês</button>
+      <button class="seg-btn${calState.view==='semana'?' active':''}" id="calSemana">Semana</button>
+    </div>
     <button class="btn subtle sm" id="calPrev">‹</button>
     <button class="btn subtle sm" id="calToday">Hoje</button>
     <button class="btn subtle sm" id="calNext">›</button>
     <button class="btn" id="novoEvento">+ Novo evento</button>`);
 
+  if (calState.view === 'semana') renderCalWeek(); else renderCalMonth();
+
+  $('#calMes').onclick = () => { calState.view = 'mes'; renderCalendario(); };
+  $('#calSemana').onclick = () => { calState.view = 'semana'; renderCalendario(); };
+  $('#calToday').onclick = () => { const d = new Date(); calState.y = d.getFullYear(); calState.m = d.getMonth(); calState.anchor = todayISO(); renderCalendario(); };
+  $('#novoEvento').onclick = () => eventoForm();
+  if (calState.view === 'semana') {
+    $('#calPrev').onclick = () => { calState.anchor = shiftDays(weekStart(calState.anchor), -7); renderCalendario(); };
+    $('#calNext').onclick = () => { calState.anchor = shiftDays(weekStart(calState.anchor), 7); renderCalendario(); };
+  } else {
+    $('#calPrev').onclick = () => { calState.m--; if (calState.m < 0){ calState.m = 11; calState.y--; } renderCalendario(); };
+    $('#calNext').onclick = () => { calState.m++; if (calState.m > 11){ calState.m = 0; calState.y++; } renderCalendario(); };
+  }
+}
+
+function renderCalMonth() {
   const { y, m } = calState;
   const monthName = new Date(y, m, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   const first = new Date(y, m, 1).getDay();
@@ -729,12 +779,33 @@ function renderCalendario() {
       <div class="cal-head">${WEEK.map(w => `<div>${w}</div>`).join('')}</div>
       <div class="cal-grid">${cells.join('')}</div>
     </div>`;
-
-  $('#calPrev').onclick = () => { calState.m--; if (calState.m < 0){ calState.m = 11; calState.y--; } renderCalendario(); };
-  $('#calNext').onclick = () => { calState.m++; if (calState.m > 11){ calState.m = 0; calState.y++; } renderCalendario(); };
-  $('#calToday').onclick = () => { calState = { y:new Date().getFullYear(), m:new Date().getMonth() }; renderCalendario(); };
-  $('#novoEvento').onclick = () => eventoForm();
   view().querySelectorAll('.cal-cell[data-day]').forEach(c => c.onclick = e => { if (e.target.closest('.evt-pill')) return; eventoForm({ data: c.dataset.day }); });
+  view().querySelectorAll('.evt-pill[data-edit]').forEach(p => p.onclick = () => eventoForm(DB.get('eventos', p.dataset.edit)));
+}
+
+function renderCalWeek() {
+  const start = weekStart(calState.anchor);
+  const days = Array.from({ length: 7 }, (_, i) => shiftDays(start, i));
+  const eventos = DB.all('eventos');
+  const byDay = {};
+  eventos.forEach(e => { (byDay[e.data] = byDay[e.data] || []).push(e); });
+  const sd = isoToDate(days[0]), ed = isoToDate(days[6]);
+  const label = `${sd.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})} – ${ed.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'})}`;
+
+  const cols = days.map(iso => {
+    const d = isoToDate(iso);
+    const evs = (byDay[iso] || []).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+    const isToday = iso === todayISO();
+    return `<div class="wk-col${isToday?' today':''}" data-day="${iso}">
+      <div class="wk-head"><span class="wk-dow">${WEEK[d.getDay()]}</span><span class="wk-dnum">${d.getDate()}</span></div>
+      <div class="wk-body">${evs.map(e => `<div class="evt-pill" data-edit="${e.id}" title="${esc(e.titulo)}">${e.hora?`<span class="t">${e.hora}</span>`:''}${esc(e.titulo)}</div>`).join('')}</div>
+    </div>`;
+  }).join('');
+
+  view().innerHTML = `
+    <div style="margin-bottom:14px;font-size:15px;font-weight:600;text-transform:capitalize">${label}</div>
+    <div class="cal wk-grid">${cols}</div>`;
+  view().querySelectorAll('.wk-col[data-day]').forEach(c => c.onclick = e => { if (e.target.closest('.evt-pill')) return; eventoForm({ data: c.dataset.day }); });
   view().querySelectorAll('.evt-pill[data-edit]').forEach(p => p.onclick = () => eventoForm(DB.get('eventos', p.dataset.edit)));
 }
 function eventoForm(rec = {}) {
