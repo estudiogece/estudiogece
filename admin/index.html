@@ -355,9 +355,9 @@ function toast(msg) {
 
 /* ---------- Labels ---------- */
 const T = {
-  tipologia:   { residencial:'Residencial', comercial:'Comercial', interiores:'Interiores', urbanistico:'Urbanístico', reforma:'Reforma', consultoria:'Consultoria' },
+  tipologia:   { residencial:'Residencial', comercial:'Comercial', comercial_especial:'Comercial especial', interiores:'Interiores', paisagistico:'Paisagístico', urbanistico:'Urbanístico', regularizacao:'Regularização', reforma:'Reforma', retrofit:'Retrofit', institucional:'Institucional', consultoria:'Consultoria' },
   projStatus:  { proposta:'Proposta', andamento:'Em andamento', pausado:'Pausado', concluido:'Concluído' },
-  fase:        { estudo:'Estudo preliminar', anteprojeto:'Anteprojeto', executivo:'Projeto executivo', obra:'Obra / acompanhamento', entregue:'Entregue' },
+  fase:        { levantamento:'Levantamento cadastral', estudo:'Estudo preliminar', anteprojeto:'Anteprojeto', basico:'Projeto básico', legal:'Projeto legal', executivo:'Projeto executivo', obra:'Acompanhamento / obra', entregue:'Entrega final' },
   finTipo:     { receita:'Receita', despesa:'Despesa' },
   finStatus:   { pendente:'Pendente', pago:'Pago', atrasado:'Atrasado' },
   leadStatus:  { novo:'Novo', negociacao:'Em negociação', ganho:'Ganho', perdido:'Perdido' },
@@ -789,7 +789,7 @@ function projetoForm(rec = {}) {
     </div>
     <div class="field-row">
       <div class="field"><label>Status</label><select name="status">${options(T.projStatus, rec.status||'proposta')}</select></div>
-      <div class="field"><label>Etapa atual</label><select name="fase">${options(T.fase, rec.fase||'estudo')}</select></div>
+      <div class="field"><label>Etapa atual</label><select name="fase">${options(T.fase, rec.fase||'levantamento')}</select></div>
     </div>
     <div class="field"><label>Valor do contrato (R$)</label><input name="valor" type="number" step="0.01" min="0" value="${rec.valor??''}" placeholder="0,00"></div>
     <div class="field-row">
