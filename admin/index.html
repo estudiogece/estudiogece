@@ -796,10 +796,11 @@ function renderProjetos() {
     </div>
     <div class="card"><div class="table-wrap">
     ${list.length ? `<table>
-      <thead><tr><th>Projeto</th><th>Cliente</th><th>Tipologia</th><th>Status</th><th class="num">Valor</th><th>Prazo</th><th></th></tr></thead>
+      <thead><tr><th>Projeto</th><th style="text-align:center">Vinculado</th><th>Cliente</th><th>Tipologia</th><th>Status</th><th class="num">Valor</th><th>Prazo</th><th></th></tr></thead>
       <tbody>${list.map(p => `
         <tr>
-          <td class="strong"><span class="drive-dot ${p.arquivos&&p.arquivos.length?'on':'off'}" title="${p.arquivos&&p.arquivos.length?'Arquivo do Drive vinculado':'Sem arquivo do Drive — lembre de vincular'}"></span>${esc(p.nome)}${p.clientId?` <span class="badge ganho" title="Vinculado à conta ${esc(p.clientEmail||'')}">conta</span>`:''}</td>
+          <td class="strong">${esc(p.nome)}${p.clientId?` <span class="badge ganho" title="Vinculado à conta ${esc(p.clientEmail||'')}">conta</span>`:''}</td>
+          <td style="text-align:center"><span class="drive-dot ${p.arquivos&&p.arquivos.length?'on':'off'}" title="${p.arquivos&&p.arquivos.length?'Arquivo do Drive vinculado':'Sem arquivo do Drive — lembre de vincular'}"></span></td>
           <td>${esc(p.cliente||'—')}</td>
           <td>${T.tipologia[p.tipologia]||'—'}</td>
           <td>${badge(p.status, T.projStatus[p.status]||p.status)}</td>
