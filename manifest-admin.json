@@ -1,0 +1,14 @@
+{
+  "name": "Estúdio Gecê — Admin",
+  "short_name": "Gecê Admin",
+  "start_url": "/admin/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#561624",
+  "theme_color": "#561624",
+  "icons": [
+    { "src": "/assets/img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

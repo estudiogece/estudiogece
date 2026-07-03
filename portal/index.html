@@ -6,6 +6,14 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Meu portal — Estúdio Gecê</title>
 <link rel="icon" type="image/svg+xml" href="/assets/img/selo-fullcolor.svg">
+<!-- PWA (iPhone/iPad) -->
+<link rel="manifest" href="/manifest-portal.json">
+<meta name="theme-color" content="#561624">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Meu Portal">
+<link rel="apple-touch-icon" href="/assets/img/icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
@@ -48,14 +56,14 @@
   .empty strong { display:block; color:var(--ink); font-size:16px; font-weight:600; margin-bottom:6px; }
   .loading { text-align:center; color:var(--muted); padding:60px; font-size:14px; }
   /* Stepper de etapas */
-  .stepper { display:flex; margin-top:16px; gap:4px; overflow-x:auto; padding-bottom:4px; }
-  .step { flex:1 0 auto; min-width:74px; display:flex; flex-direction:column; align-items:center; gap:6px; position:relative; }
-  .step .dot { width:14px; height:14px; border-radius:50%; background:var(--line); border:2px solid var(--line); z-index:1; }
-  .step .lbl { font-size:10.5px; color:var(--muted); text-align:center; line-height:1.2; }
-  .step::before { content:''; position:absolute; top:6px; left:-50%; width:100%; height:2px; background:var(--line); }
-  .step:first-child::before { display:none; }
+  .stepper { display:flex; margin-top:16px; overflow-x:auto; padding-bottom:4px; }
+  .step { flex:1 1 0; min-width:72px; display:flex; flex-direction:column; align-items:center; gap:8px; position:relative; }
+  .step .dot { width:14px; height:14px; border-radius:50%; background:#fff; border:2px solid var(--line); position:relative; z-index:1; }
+  .step .lbl { font-size:10.5px; color:var(--muted); text-align:center; line-height:1.2; padding:0 2px; }
+  /* conector: liga o centro deste ponto ao centro do próximo (passos de largura igual) */
+  .step:not(:last-child)::after { content:''; position:absolute; top:6px; left:50%; width:100%; height:2px; background:var(--line); z-index:0; }
   .step.done .dot, .step.current .dot { background:var(--bordeaux); border-color:var(--bordeaux); }
-  .step.done::before, .step.current::before { background:var(--bordeaux); }
+  .step.done:not(:last-child)::after { background:var(--bordeaux); }
   .step.current .dot { box-shadow:0 0 0 4px rgba(86,22,36,.15); }
   .step.current .lbl { color:var(--bordeaux); font-weight:700; }
   /* Resumo de parcelas */
@@ -254,5 +262,6 @@
     document.getElementById('app').innerHTML = html;
   })();
 </script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}</script>
 </body>
 </html>
