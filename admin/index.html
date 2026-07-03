@@ -250,6 +250,30 @@
   .evt-pill { font-size: 11px; padding: 3px 7px; border-radius: 5px; margin-bottom: 3px; background: #f1e6e8; color: var(--bordeaux); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
   .evt-pill .t { opacity: .7; margin-right: 4px; }
   .cal-more { font-size: 10.5px; color: var(--muted); font-weight: 600; }
+  .evt-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+
+  /* Calendário estilo Fantastical: calendário + agenda lateral */
+  .cal-layout { display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 20px; align-items: start; }
+  .cal-main { min-width: 0; }
+  .cal-title { margin-bottom: 14px; font-size: 17px; font-weight: 700; text-transform: capitalize; }
+  .cal-agenda { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; max-height: 74vh; overflow-y: auto; position: sticky; top: 20px; }
+  .cal-agenda h3 { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 16px; }
+  .ag-day { display: flex; gap: 14px; padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .ag-day:last-child { border-bottom: none; margin-bottom: 0; }
+  .ag-date { flex: 0 0 44px; text-align: center; }
+  .ag-date .dnum { font-size: 22px; font-weight: 700; display: block; line-height: 1; }
+  .ag-date .dwd { font-size: 9.5px; text-transform: uppercase; letter-spacing: .02em; color: var(--muted); display: block; margin-top: 3px; }
+  .ag-date.today .dnum { color: var(--bordeaux); }
+  .ag-list { flex: 1; min-width: 0; }
+  .ag-evt { display: flex; gap: 10px; padding: 6px 8px; margin: 1px -8px; border-radius: 8px; cursor: pointer; transition: background .12s ease; }
+  .ag-evt:hover { background: #fbf8f6; }
+  .ag-bar { width: 3px; border-radius: 3px; flex: 0 0 3px; }
+  .ag-evt .t { font-weight: 600; font-size: 13px; line-height: 1.25; }
+  .ag-evt .m { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  @media (max-width: 900px) {
+    .cal-layout { grid-template-columns: 1fr; }
+    .cal-agenda { position: static; max-height: none; order: -1; }
+  }
 
   /* Alternador Mês/Semana */
   .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
@@ -901,6 +925,9 @@ function finForm(rec = {}) {
 
 /* ---------- Calendário ---------- */
 const WEEK = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const EVT_COR = { reuniao:'#3d6b8a', visita:'#3f6b4f', entrega:'#7a2438', obra:'#b3762c', outro:'#8a7a7d' };
+const evtColor = e => EVT_COR[e && e.tipo] || '#8a7a7d';
+const evtPill = e => `<div class="evt-pill" data-edit="${e.id}" title="${esc(e.titulo)}" style="background:${evtColor(e)}1a;color:${evtColor(e)}"><span class="evt-dot" style="background:${evtColor(e)}"></span>${e.hora?`<span class="t">${e.hora}</span>`:''}${esc(e.titulo)}</div>`;
 let calState = { view: 'semana', y: new Date().getFullYear(), m: new Date().getMonth(), anchor: todayISO() };
 const isoToDate = iso => new Date(iso + 'T00:00:00');
 const dateToISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -920,7 +947,10 @@ function renderCalendario() {
     <button class="btn subtle sm" id="calNext">›</button>
     <button class="btn" id="novoEvento">+ Novo evento</button>`);
 
+  view().innerHTML = `<div class="cal-layout"><div class="cal-main" id="calMain"></div><aside class="cal-agenda" id="calAgenda"></aside></div>`;
+
   if (calState.view === 'semana') renderCalWeek(); else renderCalMonth();
+  renderAgenda();
 
   $('#calMes').onclick = () => { calState.view = 'mes'; renderCalendario(); };
   $('#calSemana').onclick = () => { calState.view = 'semana'; renderCalendario(); };
@@ -940,56 +970,73 @@ function renderCalMonth() {
   const monthName = new Date(y, m, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   const first = new Date(y, m, 1).getDay();
   const days = new Date(y, m + 1, 0).getDate();
-  const eventos = DB.all('eventos');
   const byDay = {};
-  eventos.forEach(e => { (byDay[e.data] = byDay[e.data] || []).push(e); });
-
+  DB.all('eventos').forEach(e => { (byDay[e.data] = byDay[e.data] || []).push(e); });
   const cells = [];
   for (let i = 0; i < first; i++) cells.push(`<div class="cal-cell other"></div>`);
   for (let d = 1; d <= days; d++) {
     const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const evs = (byDay[iso] || []).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
     const isToday = iso === todayISO();
-    const shown = evs.slice(0, 3).map(e => `<div class="evt-pill" data-edit="${e.id}" title="${esc(e.titulo)}">${e.hora?`<span class="t">${e.hora}</span>`:''}${esc(e.titulo)}</div>`).join('');
+    const shown = evs.slice(0, 3).map(evtPill).join('');
     const more = evs.length > 3 ? `<div class="cal-more">+${evs.length - 3} mais</div>` : '';
     cells.push(`<div class="cal-cell${isToday?' today':''}" data-day="${iso}"><div class="day-num">${d}</div>${shown}${more}</div>`);
   }
   while (cells.length % 7 !== 0) cells.push(`<div class="cal-cell other"></div>`);
-
-  view().innerHTML = `
-    <div style="margin-bottom:14px;font-size:15px;font-weight:600;text-transform:capitalize">${monthName}</div>
+  const main = $('#calMain');
+  main.innerHTML = `
+    <div class="cal-title">${monthName}</div>
     <div class="cal">
       <div class="cal-head">${WEEK.map(w => `<div>${w}</div>`).join('')}</div>
       <div class="cal-grid">${cells.join('')}</div>
     </div>`;
-  view().querySelectorAll('.cal-cell[data-day]').forEach(c => c.onclick = e => { if (e.target.closest('.evt-pill')) return; eventoForm({ data: c.dataset.day }); });
-  view().querySelectorAll('.evt-pill[data-edit]').forEach(p => p.onclick = () => eventoForm(DB.get('eventos', p.dataset.edit)));
+  main.querySelectorAll('.cal-cell[data-day]').forEach(c => c.onclick = e => { if (e.target.closest('.evt-pill')) return; eventoForm({ data: c.dataset.day }); });
+  main.querySelectorAll('.evt-pill[data-edit]').forEach(p => p.onclick = () => eventoForm(DB.get('eventos', p.dataset.edit)));
 }
 
 function renderCalWeek() {
   const start = weekStart(calState.anchor);
   const days = Array.from({ length: 7 }, (_, i) => shiftDays(start, i));
-  const eventos = DB.all('eventos');
   const byDay = {};
-  eventos.forEach(e => { (byDay[e.data] = byDay[e.data] || []).push(e); });
+  DB.all('eventos').forEach(e => { (byDay[e.data] = byDay[e.data] || []).push(e); });
   const sd = isoToDate(days[0]), ed = isoToDate(days[6]);
   const label = `${sd.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})} – ${ed.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'})}`;
-
   const cols = days.map(iso => {
     const d = isoToDate(iso);
     const evs = (byDay[iso] || []).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
     const isToday = iso === todayISO();
     return `<div class="wk-col${isToday?' today':''}" data-day="${iso}">
       <div class="wk-head"><span class="wk-dow">${WEEK[d.getDay()]}</span><span class="wk-dnum">${d.getDate()}</span></div>
-      <div class="wk-body">${evs.map(e => `<div class="evt-pill" data-edit="${e.id}" title="${esc(e.titulo)}">${e.hora?`<span class="t">${e.hora}</span>`:''}${esc(e.titulo)}</div>`).join('')}</div>
+      <div class="wk-body">${evs.map(evtPill).join('')}</div>
     </div>`;
   }).join('');
+  const main = $('#calMain');
+  main.innerHTML = `<div class="cal-title">${label}</div><div class="cal wk-grid">${cols}</div>`;
+  main.querySelectorAll('.wk-col[data-day]').forEach(c => c.onclick = e => { if (e.target.closest('.evt-pill')) return; eventoForm({ data: c.dataset.day }); });
+  main.querySelectorAll('.evt-pill[data-edit]').forEach(p => p.onclick = () => eventoForm(DB.get('eventos', p.dataset.edit)));
+}
 
-  view().innerHTML = `
-    <div style="margin-bottom:14px;font-size:15px;font-weight:600;text-transform:capitalize">${label}</div>
-    <div class="cal wk-grid">${cols}</div>`;
-  view().querySelectorAll('.wk-col[data-day]').forEach(c => c.onclick = e => { if (e.target.closest('.evt-pill')) return; eventoForm({ data: c.dataset.day }); });
-  view().querySelectorAll('.evt-pill[data-edit]').forEach(p => p.onclick = () => eventoForm(DB.get('eventos', p.dataset.edit)));
+function renderAgenda() {
+  const eventos = DB.all('eventos').filter(e => e.data >= todayISO())
+    .sort((a,b) => (a.data + (a.hora||'99')).localeCompare(b.data + (b.hora||'99')));
+  const byDay = {}, order = [];
+  eventos.forEach(e => { if (!byDay[e.data]) { byDay[e.data] = []; order.push(e.data); } byDay[e.data].push(e); });
+  const ag = $('#calAgenda');
+  ag.innerHTML = `<h3>Próximos eventos</h3>` + (order.length ? order.slice(0, 30).map(iso => {
+    const d = isoToDate(iso);
+    return `<div class="ag-day">
+      <div class="ag-date${iso===todayISO()?' today':''}">
+        <span class="dnum">${d.getDate()}</span>
+        <span class="dwd">${WEEK[d.getDay()]} · ${d.toLocaleDateString('pt-BR',{month:'short'})}</span>
+      </div>
+      <div class="ag-list">${byDay[iso].map(e => `
+        <div class="ag-evt" data-edit="${e.id}">
+          <span class="ag-bar" style="background:${evtColor(e)}"></span>
+          <div><div class="t">${esc(e.titulo)}</div><div class="m">${e.hora?e.hora+' · ':''}${T.evtTipo[e.tipo]||''}</div></div>
+        </div>`).join('')}</div>
+    </div>`;
+  }).join('') : `<div class="empty" style="padding:24px 0">Sem eventos à frente.</div>`);
+  ag.querySelectorAll('.ag-evt[data-edit]').forEach(el => el.onclick = () => eventoForm(DB.get('eventos', el.dataset.edit)));
 }
 function eventoForm(rec = {}) {
   const projOpts = `<option value="">— Nenhum —</option>` + DB.all('projetos').map(p => `<option value="${p.id}"${p.id===rec.projetoId?' selected':''}>${esc(p.nome)}</option>`).join('');
