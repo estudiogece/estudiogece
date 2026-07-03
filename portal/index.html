@@ -37,7 +37,7 @@
   .badge.pendente { background:#fbe9d9; color:var(--warn); }
   .badge.atrasado { background:#f6dede; color:var(--danger); }
   .badge.pago { background:#e2ede5; color:var(--ok); }
-  .proj-body { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; border-top:1px solid var(--line); padding-top:14px; }
+  .proj-body { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; border-top:1px solid var(--line); padding-top:14px; }
   .kv .k { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:600; margin-bottom:3px; }
   .kv .v { font-size:14px; font-weight:500; }
   .list { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:8px 22px; }
@@ -202,7 +202,6 @@
             <span class="badge ${p.status||'proposta'}">${PST[p.status]||'—'}</span>
           </div>
           <div class="proj-body">
-            <div class="kv"><div class="k">Prazo</div><div class="v">${p.prazo?fmtDate(p.prazo):'A definir'}</div></div>
             <div class="kv"><div class="k">Etapa atual</div><div class="v">${FASE[p.fase]||'Estudo preliminar'}</div></div>
             <div class="kv"><div class="k">Início</div><div class="v">${p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):'—'}</div></div>
           </div>
