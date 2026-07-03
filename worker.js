@@ -319,6 +319,8 @@ const TABLES = {
   eventos: { titulo: "titulo", data: "data", hora: "hora", tipo: "tipo", projetoId: "projeto_id", notas: "notas" },
   leads: { nome: "nome", contato: "contato", origem: "origem", interesse: "interesse", status: "status", valor: "valor", notas: "notas" },
   arquivos: { nome: "nome", url: "url", projetoId: "projeto_id" },
+  posts: { data: "data", canal: "canal", titulo: "titulo", legenda: "legenda", status: "status", alcance: "alcance", curtidas: "curtidas", notas: "notas" },
+  campanhas: { nome: "nome", canal: "canal", objetivo: "objetivo", inicio: "inicio", fim: "fim", investimento: "investimento", leads: "leads", alcance: "alcance", status: "status", notas: "notas" },
 };
 const selectList = (table) => ["id", "created_at", ...Object.entries(TABLES[table]).map(([a, d]) => `${d} AS ${a}`)].join(", ");
 
@@ -346,7 +348,7 @@ async function attachArquivos(env, projetos) {
 }
 
 async function handleAdminData(env) {
-  const [projetos, financeiro, eventos, leads, clientes] = await Promise.all([
+  const [projetos, financeiro, eventos, leads, clientes, posts, campanhas] = await Promise.all([
     projetosWithClient(env, null).then((ps) => attachArquivos(env, ps)),
     env.DB.prepare(`SELECT ${selectList("financeiro")} FROM financeiro ORDER BY vencimento DESC`).all().then((r) => r.results || []),
     env.DB.prepare(`SELECT ${selectList("eventos")} FROM eventos ORDER BY data ASC`).all().then((r) => r.results || []),
@@ -354,8 +356,10 @@ async function handleAdminData(env) {
     env.DB.prepare(`SELECT id, name, email, telefone, ativo, created_at,
       (SELECT COUNT(*) FROM projetos p WHERE p.client_id = users.id) AS numProjetos
       FROM users WHERE role='client' ORDER BY created_at DESC`).all().then((r) => r.results || []),
+    env.DB.prepare(`SELECT ${selectList("posts")} FROM posts ORDER BY data DESC`).all().then((r) => r.results || []),
+    env.DB.prepare(`SELECT ${selectList("campanhas")} FROM campanhas ORDER BY created_at DESC`).all().then((r) => r.results || []),
   ]);
-  return json({ projetos, financeiro, eventos, leads, clientes });
+  return json({ projetos, financeiro, eventos, leads, clientes, posts, campanhas });
 }
 
 function pickFields(table, body) {

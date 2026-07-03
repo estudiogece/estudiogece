@@ -70,6 +70,23 @@ CREATE TABLE IF NOT EXISTS arquivos (
   created_at INTEGER NOT NULL
 );
 
+-- Marketing: planejador de conteúdo (posts) e campanhas
+CREATE TABLE IF NOT EXISTS posts (
+  id         TEXT PRIMARY KEY,
+  data       TEXT, canal TEXT, titulo TEXT NOT NULL, legenda TEXT,
+  status     TEXT,      -- ideia|producao|agendado|publicado
+  alcance    INTEGER, curtidas INTEGER, notas TEXT,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS campanhas (
+  id           TEXT PRIMARY KEY,
+  nome         TEXT NOT NULL, canal TEXT, objetivo TEXT, inicio TEXT, fim TEXT,
+  investimento REAL, leads INTEGER, alcance INTEGER,
+  status       TEXT,    -- planejada|ativa|concluida
+  notas        TEXT,
+  created_at   INTEGER NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_arquivos_projeto ON arquivos(projeto_id);
 CREATE INDEX IF NOT EXISTS idx_projetos_client ON projetos(client_id);
 CREATE INDEX IF NOT EXISTS idx_financeiro_projeto ON financeiro(projeto_id);
