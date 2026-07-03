@@ -51,12 +51,7 @@
     height: 100vh;
   }
   .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
-  .logo-mark {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: #fff; color: var(--bordeaux);
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 18px;
-  }
+  .logo-mark { width: 38px; height: 38px; object-fit: contain; display: block; }
   .logo-text { font-size: 14px; font-weight: 600; letter-spacing: 0.04em; }
   .logo-text span { display: block; font-size: 11px; font-weight: 400; opacity: 0.65; }
   nav { display: flex; flex-direction: column; gap: 4px; }
@@ -268,7 +263,7 @@
 
   <aside class="sidebar">
     <div class="logo">
-      <div class="logo-mark">g</div>
+      <img class="logo-mark" src="/assets/img/selo-branca.svg" alt="Estúdio Gecê" />
       <div class="logo-text">ESTÚDIO GECÊ<span>Painel Admin</span></div>
     </div>
     <nav id="nav">

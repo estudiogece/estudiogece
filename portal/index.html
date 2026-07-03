@@ -16,7 +16,7 @@
   .topbar { background:var(--bordeaux); color:#fff; }
   .topbar-inner { max-width:960px; margin:0 auto; padding:18px 24px; display:flex; align-items:center; justify-content:space-between; }
   .brand { display:flex; align-items:center; gap:12px; }
-  .mark { width:36px; height:36px; border-radius:50%; background:#fff; color:var(--bordeaux); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px; }
+  .mark { width:38px; height:38px; object-fit:contain; display:block; }
   .brand .txt { font-size:14px; font-weight:600; letter-spacing:.04em; }
   .brand .txt span { display:block; font-size:11px; font-weight:400; opacity:.65; }
   .logout { font-family:inherit; font-size:12.5px; font-weight:500; color:rgba(255,255,255,.8); background:rgba(255,255,255,.1); border:none; border-radius:8px; padding:8px 14px; cursor:pointer; }
@@ -54,7 +54,7 @@
   <div class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <div class="mark">g</div>
+        <img class="mark" src="/assets/img/selo-branca.svg" alt="Estúdio Gecê" />
         <div class="txt">ESTÚDIO GECÊ<span>Portal do cliente</span></div>
       </div>
       <button class="logout" id="logout">Sair</button>
