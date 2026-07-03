@@ -248,14 +248,14 @@
   .cal-head { display: grid; grid-template-columns: repeat(7,1fr); background: #fbf8f6; border-bottom: 1px solid var(--line); }
   .cal-head div { padding: 10px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); text-align: center; }
   .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); }
-  .cal-cell { min-height: 104px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 8px; cursor: pointer; position: relative; transition: background .12s ease; }
+  .cal-cell { min-height: 104px; min-width: 0; overflow: hidden; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 8px; cursor: pointer; position: relative; transition: background .12s ease; }
   .cal-cell:nth-child(7n) { border-right: none; }
   .cal-cell:hover { background: #fdfbfa; }
   .cal-cell.other { background: #faf7f6; color: var(--muted); cursor: default; }
   .cal-cell.other:hover { background: #faf7f6; }
   .cal-cell .day-num { font-size: 12.5px; font-weight: 600; margin-bottom: 5px; }
   .cal-cell.today .day-num { background: var(--bordeaux); color: #fff; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
-  .evt-pill { font-size: 11px; padding: 3px 7px; border-radius: 5px; margin-bottom: 3px; background: #f1e6e8; color: var(--bordeaux); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+  .evt-pill { display: block; max-width: 100%; font-size: 11px; padding: 3px 7px; border-radius: 5px; margin-bottom: 3px; background: #f1e6e8; color: var(--bordeaux); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
   .evt-pill .t { opacity: .7; margin-right: 4px; }
   .cal-more { font-size: 10.5px; color: var(--muted); font-weight: 600; }
   .evt-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
@@ -294,7 +294,7 @@
   .seg-btn.active:hover { background: var(--bordeaux); }
   /* Visão semanal */
   .wk-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
-  .wk-col { min-height: 340px; border-right: 1px solid var(--line); cursor: pointer; transition: background .12s ease; }
+  .wk-col { min-height: 340px; min-width: 0; overflow: hidden; border-right: 1px solid var(--line); cursor: pointer; transition: background .12s ease; }
   .wk-col:last-child { border-right: none; }
   .wk-col:hover { background: #fdfbfa; }
   .wk-head { text-align: center; padding: 10px 4px; border-bottom: 1px solid var(--line); }
