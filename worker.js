@@ -282,6 +282,9 @@ async function handleLogin(request, env) {
   } else {
     const row = await env.DB.prepare("SELECT * FROM users WHERE email=?").bind(email).first();
     if (row && (await verifyPassword(senha, row.password_salt, row.password_hash))) {
+      if (row.ativo === 0) {
+        return json({ ok: false, error: "Conta desativada. Fale com o Estúdio Gecê." }, 403);
+      }
       claims = { sub: row.id, role: row.role };
       user = { name: row.name, email: row.email, role: row.role };
     }
@@ -311,7 +314,7 @@ async function handleMe(request, env) {
 // API de dados (D1). Campos expostos em camelCase -> colunas no banco.
 // ============================================================
 const TABLES = {
-  projetos: { nome: "nome", cliente: "cliente", clientId: "client_id", tipologia: "tipologia", status: "status", valor: "valor", prazo: "prazo", local: "local", notas: "notas" },
+  projetos: { nome: "nome", cliente: "cliente", clientId: "client_id", tipologia: "tipologia", status: "status", fase: "fase", valor: "valor", prazo: "prazo", local: "local", notas: "notas" },
   financeiro: { descricao: "descricao", tipo: "tipo", valor: "valor", vencimento: "vencimento", status: "status", projetoId: "projeto_id" },
   eventos: { titulo: "titulo", data: "data", hora: "hora", tipo: "tipo", projetoId: "projeto_id", notas: "notas" },
   leads: { nome: "nome", contato: "contato", origem: "origem", interesse: "interesse", status: "status", valor: "valor", notas: "notas" },
@@ -321,7 +324,7 @@ const selectList = (table) => ["id", "created_at", ...Object.entries(TABLES[tabl
 
 async function projetosWithClient(env, whereClientId) {
   let sql = `SELECT p.id, p.created_at, p.nome, p.cliente, p.client_id AS clientId, p.tipologia, p.status,
-    p.valor, p.prazo, p.local, p.notas, u.name AS clientNome, u.email AS clientEmail
+    p.fase, p.valor, p.prazo, p.local, p.notas, u.name AS clientNome, u.email AS clientEmail
     FROM projetos p LEFT JOIN users u ON u.id = p.client_id`;
   const binds = [];
   if (whereClientId) { sql += " WHERE p.client_id = ?"; binds.push(whereClientId); }
@@ -348,7 +351,7 @@ async function handleAdminData(env) {
     env.DB.prepare(`SELECT ${selectList("financeiro")} FROM financeiro ORDER BY vencimento DESC`).all().then((r) => r.results || []),
     env.DB.prepare(`SELECT ${selectList("eventos")} FROM eventos ORDER BY data ASC`).all().then((r) => r.results || []),
     env.DB.prepare(`SELECT ${selectList("leads")} FROM leads ORDER BY created_at DESC`).all().then((r) => r.results || []),
-    env.DB.prepare(`SELECT id, name, email, created_at,
+    env.DB.prepare(`SELECT id, name, email, telefone, ativo, created_at,
       (SELECT COUNT(*) FROM projetos p WHERE p.client_id = users.id) AS numProjetos
       FROM users WHERE role='client' ORDER BY created_at DESC`).all().then((r) => r.results || []),
   ]);
@@ -370,9 +373,16 @@ async function handleAdminCreate(env, table, body) {
   const record = table === "projetos"
     ? (await projetosWithClient(env, null)).find((p) => p.id === id)
     : await env.DB.prepare(`SELECT ${selectList(table)} FROM ${table} WHERE id=?`).bind(id).first();
+  if (table === "projetos" && body.clientId) { try { await notifyProjectLinked(env, id); } catch {} }
+  if (table === "arquivos" && body.projetoId) { try { await notifyNewFile(env, body.projetoId, body.nome); } catch {} }
   return json({ ok: true, record });
 }
 async function handleAdminUpdate(env, table, id, body) {
+  let oldClient = null;
+  if (table === "projetos") {
+    const old = await env.DB.prepare("SELECT client_id FROM projetos WHERE id=?").bind(id).first();
+    oldClient = old ? old.client_id : null;
+  }
   const { cols, vals } = pickFields(table, body);
   if (cols.length) {
     await env.DB.prepare(`UPDATE ${table} SET ${cols.map((c) => c + "=?").join(",")} WHERE id=?`).bind(...vals, id).run();
@@ -380,6 +390,7 @@ async function handleAdminUpdate(env, table, id, body) {
   const record = table === "projetos"
     ? (await projetosWithClient(env, null)).find((p) => p.id === id)
     : await env.DB.prepare(`SELECT ${selectList(table)} FROM ${table} WHERE id=?`).bind(id).first();
+  if (table === "projetos" && body.clientId && body.clientId !== oldClient) { try { await notifyProjectLinked(env, id); } catch {} }
   return json({ ok: true, record });
 }
 async function handleAdminDelete(env, table, id) {
@@ -403,6 +414,91 @@ async function handlePortalData(env, session) {
   return json({ user, projetos, eventos, financeiro });
 }
 
+// ---------- Notificações por e-mail (Resend) ----------
+const NOTIF_FROM = "Estúdio Gecê <briefing@estudiogece.com.br>";
+const SITE = "https://estudiogece.com.br";
+async function sendMail(env, to, subject, html) {
+  if (!env.RESEND_API_KEY || !to) return;
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "content-type": "application/json" },
+      body: JSON.stringify({ from: NOTIF_FROM, to: [to], subject, html }),
+    });
+  } catch {}
+}
+function mailShell(titulo, corpo) {
+  return `<div style="font-family:system-ui,Arial,sans-serif;max-width:560px;color:#211013">
+    <h2 style="color:#561624;margin:0 0 12px">${titulo}</h2>${corpo}
+    <p style="margin-top:24px"><a href="${SITE}/portal/" style="background:#561624;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;display:inline-block">Acessar meu portal</a></p>
+    <p style="color:#8a7a7d;font-size:12px;margin-top:24px">Estúdio Gecê · Arquitetura</p></div>`;
+}
+const firstName = n => String(n || "").trim().split(" ")[0] || "";
+async function clientOfProject(env, projetoId) {
+  return env.DB.prepare("SELECT u.name, u.email FROM projetos p JOIN users u ON u.id=p.client_id WHERE p.id=? AND u.ativo=1").bind(projetoId).first();
+}
+async function notifyProjectLinked(env, projetoId) {
+  const c = await clientOfProject(env, projetoId); if (!c) return;
+  const p = await env.DB.prepare("SELECT nome FROM projetos WHERE id=?").bind(projetoId).first();
+  await sendMail(env, c.email, "Seu projeto no Estúdio Gecê",
+    mailShell(`Olá, ${firstName(c.name)}!`, `<p>O projeto <strong>${esc(p ? p.nome : "")}</strong> foi vinculado à sua conta. Você já pode acompanhar o andamento, arquivos e pagamentos no seu portal.</p>`));
+}
+async function notifyNewFile(env, projetoId, nome) {
+  const c = await clientOfProject(env, projetoId); if (!c) return;
+  await sendMail(env, c.email, "Novo arquivo disponível",
+    mailShell(`Olá, ${firstName(c.name)}!`, `<p>Um novo arquivo foi adicionado ao seu projeto: <strong>${esc(nome)}</strong>. Acesse o portal para visualizar.</p>`));
+}
+
+// ---------- Gestão de clientes (admin) ----------
+function gerarSenha() {
+  const c = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  const b = crypto.getRandomValues(new Uint8Array(12));
+  let s = ""; for (const x of b) s += c[x % c.length];
+  return s.slice(0, 4) + "-" + s.slice(4, 8) + "-" + s.slice(8, 12);
+}
+async function handleClienteUpdate(env, id, b) {
+  const name = String(b.name || "").trim();
+  const email = String(b.email || "").trim().toLowerCase();
+  if (!name || !emailOk(email)) return json({ ok: false, error: "Nome e e-mail válidos são obrigatórios." }, 400);
+  const dup = await env.DB.prepare("SELECT id FROM users WHERE email=? AND id<>?").bind(email, id).first();
+  if (dup) return json({ ok: false, error: "E-mail já usado por outra conta." }, 409);
+  const ativo = (b.ativo === 0 || b.ativo === "0" || b.ativo === false || b.ativo === "false") ? 0 : 1;
+  await env.DB.prepare("UPDATE users SET name=?, email=?, telefone=?, ativo=? WHERE id=? AND role='client'")
+    .bind(name, email, b.telefone || null, ativo, id).run();
+  return json({ ok: true });
+}
+async function handleClienteDelete(env, id) {
+  await env.DB.prepare("DELETE FROM users WHERE id=? AND role='client'").bind(id).run();
+  return json({ ok: true });
+}
+async function handleClienteResetSenha(env, id) {
+  const row = await env.DB.prepare("SELECT email, name FROM users WHERE id=? AND role='client'").bind(id).first();
+  if (!row) return json({ ok: false, error: "Cliente não encontrado." }, 404);
+  const senha = gerarSenha();
+  const { salt, hash } = await hashPassword(senha);
+  await env.DB.prepare("UPDATE users SET password_hash=?, password_salt=? WHERE id=?").bind(hash, salt, id).run();
+  try {
+    await sendMail(env, row.email, "Sua senha foi redefinida — Estúdio Gecê",
+      mailShell(`Olá, ${firstName(row.name)}!`, `<p>O Estúdio Gecê redefiniu a senha da sua conta. Sua nova senha é:</p><p style="font-size:20px;font-weight:700;letter-spacing:1px;color:#561624">${senha}</p>`));
+  } catch {}
+  return json({ ok: true, senha });
+}
+
+// ---------- Lembrete de parcelas (cron) ----------
+async function lembrarParcelas(env) {
+  const alvo = new Date(); alvo.setDate(alvo.getDate() + 3);
+  const iso = `${alvo.getFullYear()}-${String(alvo.getMonth()+1).padStart(2,"0")}-${String(alvo.getDate()).padStart(2,"0")}`;
+  const rows = (await env.DB.prepare(
+    `SELECT f.descricao, f.valor, f.vencimento, u.name, u.email
+     FROM financeiro f JOIN projetos p ON p.id=f.projeto_id JOIN users u ON u.id=p.client_id
+     WHERE f.tipo='receita' AND f.status='pendente' AND f.vencimento=? AND u.ativo=1`).bind(iso).all()).results || [];
+  for (const r of rows) {
+    const valor = (Number(r.valor) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    await sendMail(env, r.email, "Lembrete de pagamento — Estúdio Gecê",
+      mailShell(`Olá, ${firstName(r.name)}!`, `<p>Sua parcela <strong>${esc(r.descricao)}</strong> no valor de <strong>${valor}</strong> vence em <strong>${r.vencimento}</strong>.</p>`));
+  }
+}
+
 async function handleApiData(request, env, url) {
   const session = await sessionFrom(request, env);
   const parts = url.pathname.split("/").filter(Boolean); // ["api","admin","projetos","<id>"]
@@ -416,6 +512,13 @@ async function handleApiData(request, env, url) {
   if (parts[1] === "admin") {
     if (!session || session.role !== "admin") return json({ ok: false, error: "Acesso restrito." }, 403);
     if (parts[2] === "data") return handleAdminData(env);
+    if (parts[2] === "clientes") {
+      const cid = parts[3];
+      if (request.method === "PUT") return handleClienteUpdate(env, cid, await readBody(request));
+      if (request.method === "DELETE") return handleClienteDelete(env, cid);
+      if (request.method === "POST" && parts[4] === "senha") return handleClienteResetSenha(env, cid);
+      return json({ ok: false, error: "Método não permitido." }, 405);
+    }
     const table = parts[2], id = parts[3];
     if (!TABLES[table]) return json({ ok: false, error: "Coleção inválida." }, 404);
     if (request.method === "POST") return handleAdminCreate(env, table, await readBody(request));
@@ -462,6 +565,9 @@ export default {
     }
 
     return env.ASSETS.fetch(request);
+  },
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(lembrarParcelas(env));
   },
 };
 

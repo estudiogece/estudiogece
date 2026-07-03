@@ -47,7 +47,21 @@
   .empty { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:44px 24px; text-align:center; color:var(--muted); font-size:14px; }
   .empty strong { display:block; color:var(--ink); font-size:16px; font-weight:600; margin-bottom:6px; }
   .loading { text-align:center; color:var(--muted); padding:60px; font-size:14px; }
-  @media (max-width:640px){ .proj-body{ grid-template-columns:1fr 1fr; } }
+  /* Stepper de etapas */
+  .stepper { display:flex; margin-top:16px; gap:4px; }
+  .step { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; position:relative; }
+  .step .dot { width:14px; height:14px; border-radius:50%; background:var(--line); border:2px solid var(--line); z-index:1; }
+  .step .lbl { font-size:10.5px; color:var(--muted); text-align:center; line-height:1.2; }
+  .step::before { content:''; position:absolute; top:6px; left:-50%; width:100%; height:2px; background:var(--line); }
+  .step:first-child::before { display:none; }
+  .step.done .dot, .step.current .dot { background:var(--bordeaux); border-color:var(--bordeaux); }
+  .step.done::before, .step.current::before { background:var(--bordeaux); }
+  .step.current .dot { box-shadow:0 0 0 4px rgba(86,22,36,.15); }
+  .step.current .lbl { color:var(--bordeaux); font-weight:700; }
+  /* Resumo de parcelas */
+  .pay-sum { display:flex; flex-wrap:wrap; gap:10px 24px; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:14px 18px; font-size:13.5px; color:var(--muted); margin-bottom:12px; }
+  .pay-sum strong { color:var(--ink); }
+  @media (max-width:640px){ .proj-body{ grid-template-columns:1fr 1fr; } .step .lbl{ font-size:9px; } }
 </style>
 </head>
 <body>
@@ -74,6 +88,13 @@
   const EVT = { reuniao:'Reunião', visita:'Visita técnica', entrega:'Entrega', obra:'Obra', outro:'Compromisso' };
   const effFin = f => (f.status==='pendente' && f.vencimento && f.vencimento < today()) ? 'atrasado' : f.status;
   const FST = { pendente:'A pagar', pago:'Pago', atrasado:'Vencido' };
+  const FASE = { estudo:'Estudo preliminar', anteprojeto:'Anteprojeto', executivo:'Projeto executivo', obra:'Obra / acompanhamento', entregue:'Entregue' };
+  const FASE_ORDER = ['estudo','anteprojeto','executivo','obra','entregue'];
+  const stepper = fase => {
+    const idx = Math.max(0, FASE_ORDER.indexOf(fase||'estudo'));
+    return `<div class="stepper">${FASE_ORDER.map((f,i)=>`
+      <div class="step${i<idx?' done':''}${i===idx?' current':''}"><span class="dot"></span><span class="lbl">${FASE[f]}</span></div>`).join('')}</div>`;
+  };
 
   document.getElementById('logout').onclick = async () => {
     try { await fetch('/api/logout', { method:'POST' }); } catch {}
@@ -112,9 +133,10 @@
           </div>
           <div class="proj-body">
             <div class="kv"><div class="k">Prazo</div><div class="v">${p.prazo?fmtDate(p.prazo):'A definir'}</div></div>
-            <div class="kv"><div class="k">Etapa</div><div class="v">${PST[p.status]||'—'}</div></div>
+            <div class="kv"><div class="k">Etapa atual</div><div class="v">${FASE[p.fase]||'Estudo preliminar'}</div></div>
             <div class="kv"><div class="k">Início</div><div class="v">${p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):'—'}</div></div>
           </div>
+          ${stepper(p.fase)}
           ${p.notas?`<div class="proj-meta" style="margin-top:14px">${esc(p.notas)}</div>`:''}
           ${(p.arquivos&&p.arquivos.length)?`
           <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">
@@ -139,7 +161,16 @@
     }
 
     if (financeiro.length) {
-      html += `<h2>Pagamentos</h2><div class="list">` + financeiro.map(f => { const st=effFin(f); return `
+      const totalP = financeiro.reduce((s,f)=>s+(Number(f.valor)||0),0);
+      const pagoP = financeiro.filter(f=>f.status==='pago').reduce((s,f)=>s+(Number(f.valor)||0),0);
+      const nPagas = financeiro.filter(f=>f.status==='pago').length;
+      html += `<h2>Pagamentos</h2>
+        <div class="pay-sum">
+          <span><strong>${nPagas} de ${financeiro.length}</strong> parcelas pagas</span>
+          <span>Recebido <strong>${money(pagoP)}</strong></span>
+          <span>Falta <strong>${money(totalP-pagoP)}</strong></span>
+        </div>
+        <div class="list">` + financeiro.map(f => { const st=effFin(f); return `
         <div class="li">
           <div><div>${esc(f.descricao)}</div><div class="meta">Vencimento ${fmtDate(f.vencimento)}</div></div>
           <div style="display:flex;align-items:center;gap:12px">

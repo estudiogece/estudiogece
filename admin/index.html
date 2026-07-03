@@ -196,6 +196,20 @@
   .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--bordeaux); box-shadow: 0 0 0 3px rgba(86,22,36,.1); }
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
+  /* Pagamentos / parcelas */
+  .pay-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+  .pay-summary > div { background: #fbf8f6; border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+  .pay-summary .k { font-size: 11px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+  .pay-summary .v { font-size: 18px; font-weight: 700; }
+  .pay-summary .v.ok { color: var(--ok); } .pay-summary .v.warn { color: var(--warn); }
+  .pay-list { display: flex; flex-direction: column; margin-bottom: 18px; }
+  .pay-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .pay-row:last-child { border-bottom: none; }
+  .pay-row input { font-family: inherit; font-size: 12.5px; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); }
+  .pay-desc { flex: 1 1 150px; } .pay-venc { flex: 0 0 140px; } .pay-val { flex: 0 0 96px; }
+  .pay-gen { border-top: 1px solid var(--line); padding-top: 16px; }
+  .pay-gen-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+
   /* Calendar */
   .cal { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
   .cal-head { display: grid; grid-template-columns: repeat(7,1fr); background: #fbf8f6; border-bottom: 1px solid var(--line); }
@@ -319,6 +333,7 @@ function toast(msg) {
 const T = {
   tipologia:   { residencial:'Residencial', comercial:'Comercial', interiores:'Interiores', urbanistico:'Urbanístico', reforma:'Reforma', consultoria:'Consultoria' },
   projStatus:  { proposta:'Proposta', andamento:'Em andamento', pausado:'Pausado', concluido:'Concluído' },
+  fase:        { estudo:'Estudo preliminar', anteprojeto:'Anteprojeto', executivo:'Projeto executivo', obra:'Obra / acompanhamento', entregue:'Entregue' },
   finTipo:     { receita:'Receita', despesa:'Despesa' },
   finStatus:   { pendente:'Pendente', pago:'Pago', atrasado:'Atrasado' },
   leadStatus:  { novo:'Novo', negociacao:'Em negociação', ganho:'Ganho', perdido:'Perdido' },
@@ -407,6 +422,91 @@ const GDRIVE = {
     picker.setVisible(true);
   },
 };
+
+/* ---------- Modal de pagamentos / parcelas por projeto ---------- */
+function openPagamentosModal(projeto) {
+  const root = $('#modalRoot');
+  const close = () => { root.innerHTML = ''; };
+  async function draw() {
+    const parcelas = DB.all('financeiro')
+      .filter(f => f.projetoId === projeto.id && f.tipo === 'receita')
+      .sort((a,b) => (a.vencimento||'').localeCompare(b.vencimento||''));
+    const total = parcelas.reduce((s,f)=>s+(Number(f.valor)||0),0);
+    const pago = parcelas.filter(f=>f.status==='pago').reduce((s,f)=>s+(Number(f.valor)||0),0);
+    const nPagas = parcelas.filter(f=>f.status==='pago').length;
+    root.innerHTML = `
+      <div class="overlay" id="overlay">
+        <div class="modal" style="max-width:660px">
+          <div class="modal-head">
+            <h3>Pagamentos — ${esc(projeto.nome)}</h3>
+            <button type="button" class="icon-btn" id="pClose" aria-label="Fechar">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="pay-summary">
+              <div><div class="k">Parcelas pagas</div><div class="v">${nPagas} de ${parcelas.length}</div></div>
+              <div><div class="k">Recebido</div><div class="v ok">${fmtMoney(pago)}</div></div>
+              <div><div class="k">Falta</div><div class="v warn">${fmtMoney(total-pago)}</div></div>
+            </div>
+            ${parcelas.length ? `<div class="pay-list">${parcelas.map(f => { const st = effFinStatus(f); return `
+              <div class="pay-row" data-id="${f.id}">
+                <input class="pay-desc" value="${esc(f.descricao)}" aria-label="Descrição">
+                <input class="pay-venc" type="date" value="${esc(f.vencimento||'')}" aria-label="Vencimento">
+                <input class="pay-val" type="number" step="0.01" min="0" value="${f.valor??''}" aria-label="Valor">
+                <span class="badge ${st}">${T.finStatus[st]}</span>
+                <button class="icon-btn" data-save="${f.id}">Salvar</button>
+                <button class="icon-btn" data-toggle="${f.id}">${f.status==='pago'?'Reabrir':'Quitar'}</button>
+                <button class="icon-btn danger" data-del="${f.id}">✕</button>
+              </div>`; }).join('')}</div>` : `<div class="empty" style="padding:20px 0">Nenhuma parcela cadastrada.</div>`}
+            <form id="genForm" class="pay-gen">
+              <div class="pay-gen-title">Gerar parcelas</div>
+              <div class="field-row">
+                <div class="field"><label>Nº de parcelas</label><input name="n" type="number" min="1" max="60" value="10" required></div>
+                <div class="field"><label>Valor de cada (R$)</label><input name="valor" type="number" step="0.01" min="0" placeholder="0,00" required></div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>1º vencimento</label><input name="inicio" type="date" value="${todayISO()}" required></div>
+                <div class="field"><label>Descrição</label><input name="base" value="Parcela"></div>
+              </div>
+              <button type="submit" class="btn sm">Gerar parcelas mensais</button>
+            </form>
+          </div>
+          <div class="modal-foot"><button type="button" class="btn subtle" id="pDone">Fechar</button></div>
+        </div>
+      </div>`;
+    $('#pClose').onclick = close; $('#pDone').onclick = close;
+    $('#overlay').onclick = e => { if (e.target.id === 'overlay') close(); };
+    root.querySelectorAll('[data-save]').forEach(b => b.onclick = async () => {
+      const row = b.closest('.pay-row'); const f = DB.get('financeiro', b.dataset.save);
+      try {
+        await DB.upsert('financeiro', { ...f, descricao: row.querySelector('.pay-desc').value, vencimento: row.querySelector('.pay-venc').value, valor: row.querySelector('.pay-val').value });
+        await draw(); toast('Parcela atualizada.');
+      } catch (e) { toast(e.message || 'Erro.'); }
+    });
+    root.querySelectorAll('[data-toggle]').forEach(b => b.onclick = async () => {
+      const f = DB.get('financeiro', b.dataset.toggle);
+      await DB.upsert('financeiro', { ...f, status: f.status === 'pago' ? 'pendente' : 'pago' });
+      await draw(); toast(f.status === 'pago' ? 'Parcela reaberta.' : 'Parcela quitada.');
+    });
+    root.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+      if (!confirm('Remover esta parcela?')) return;
+      await DB.remove('financeiro', b.dataset.del); await draw(); toast('Parcela removida.');
+    });
+    $('#genForm').onsubmit = async e => {
+      e.preventDefault();
+      const fd = Object.fromEntries(new FormData(e.target).entries());
+      const n = Math.min(60, Math.max(1, parseInt(fd.n) || 1));
+      const base = fd.base || 'Parcela';
+      const btn = e.target.querySelector('button[type=submit]'); btn.disabled = true; btn.textContent = 'Gerando…';
+      try {
+        for (let i = 0; i < n; i++) {
+          await api('POST', '/admin/financeiro', { descricao: `${base} ${i+1}/${n}`, tipo: 'receita', valor: fd.valor, vencimento: shiftMonths(fd.inicio, i), status: 'pendente', projetoId: projeto.id });
+        }
+        await DB.load(); await draw(); toast(`${n} parcelas geradas.`);
+      } catch (err) { toast(err.message || 'Erro ao gerar.'); btn.disabled = false; btn.textContent = 'Gerar parcelas mensais'; }
+    };
+  }
+  draw();
+}
 
 /* ---------- Modal de arquivos (links do Google Drive por projeto) ---------- */
 function openFilesModal(projeto) {
@@ -534,21 +634,23 @@ function renderDashboard() {
   const leads = DB.all('leads');
   const eventos = DB.all('eventos');
 
-  const aReceber = fin.filter(f => f.tipo === 'receita' && effFinStatus(f) !== 'pago')
-                      .reduce((s, f) => s + (Number(f.valor)||0), 0);
+  const receitasAbertas = fin.filter(f => f.tipo === 'receita' && effFinStatus(f) !== 'pago');
+  const aReceber = receitasAbertas.reduce((s, f) => s + (Number(f.valor)||0), 0);
+  const mesAtual = todayISO().slice(0, 7);
+  const aReceberMes = receitasAbertas.filter(f => (f.vencimento||'').slice(0,7) === mesAtual).reduce((s, f) => s + (Number(f.valor)||0), 0);
+  const atrasadas = fin.filter(f => f.tipo === 'receita' && effFinStatus(f) === 'atrasado');
+  const atrasadasValor = atrasadas.reduce((s, f) => s + (Number(f.valor)||0), 0);
   const ativos = projetos.filter(p => p.status === 'andamento').length;
-  const pendencias = fin.filter(f => effFinStatus(f) !== 'pago').length;
-  const negociando = leads.filter(l => l.status === 'negociacao').length;
 
   const emAndamento = projetos.filter(p => p.status === 'andamento').slice(0, 6);
   const proximos = eventos.filter(e => e.data >= todayISO()).sort((a,b) => a.data.localeCompare(b.data)).slice(0, 6);
 
   view().innerHTML = `
     <section class="grid">
-      <div class="stat-card"><div class="label">A receber</div><div class="value">${fmtMoney(aReceber)}</div></div>
+      <div class="stat-card"><div class="label">A receber (total)</div><div class="value">${fmtMoney(aReceber)}</div></div>
+      <div class="stat-card"><div class="label">A receber no mês</div><div class="value">${fmtMoney(aReceberMes)}</div></div>
+      <div class="stat-card"><div class="label">Parcelas atrasadas</div><div class="value danger">${atrasadas.length}${atrasadas.length?` · ${fmtMoney(atrasadasValor)}`:''}</div></div>
       <div class="stat-card"><div class="label">Projetos ativos</div><div class="value">${ativos}</div></div>
-      <div class="stat-card"><div class="label">Pendências financeiras</div><div class="value warn">${pendencias}</div></div>
-      <div class="stat-card"><div class="label">Leads em negociação</div><div class="value ok">${negociando}</div></div>
     </section>
     <section class="panels">
       <div class="panel">
@@ -602,6 +704,7 @@ function renderProjetos() {
           <td class="num">${fmtMoney(p.valor)}</td>
           <td>${p.prazo?fmtDate(p.prazo):'—'}</td>
           <td class="actions">
+            <button class="icon-btn" data-pagar="${p.id}">Pagamentos</button>
             <button class="icon-btn" data-files="${p.id}">Arquivos${p.arquivos&&p.arquivos.length?` (${p.arquivos.length})`:''}</button>
             <button class="icon-btn" data-edit="${p.id}">Editar</button>
             <button class="icon-btn danger" data-del="${p.id}">Excluir</button>
@@ -612,6 +715,7 @@ function renderProjetos() {
 
   $('#pq').oninput = e => { projFilter.q = e.target.value; renderProjetos(); const el=$('#pq'); el.focus(); el.setSelectionRange(el.value.length,el.value.length); };
   $('#pstatus').onchange = e => { projFilter.status = e.target.value; renderProjetos(); };
+  view().querySelectorAll('[data-pagar]').forEach(b => b.onclick = () => openPagamentosModal(DB.get('projetos', b.dataset.pagar)));
   view().querySelectorAll('[data-files]').forEach(b => b.onclick = () => openFilesModal(DB.get('projetos', b.dataset.files)));
   view().querySelectorAll('[data-edit]').forEach(b => b.onclick = () => projetoForm(DB.get('projetos', b.dataset.edit)));
   view().querySelectorAll('[data-del]').forEach(b => b.onclick = () => { const p = DB.get('projetos', b.dataset.del); confirmDelete(p.nome, async () => { await DB.remove('projetos', p.id); renderProjetos(); toast('Projeto removido.'); }); });
@@ -626,8 +730,9 @@ function projetoForm(rec = {}) {
     </div>
     <div class="field-row">
       <div class="field"><label>Status</label><select name="status">${options(T.projStatus, rec.status||'proposta')}</select></div>
-      <div class="field"><label>Valor do contrato (R$)</label><input name="valor" type="number" step="0.01" min="0" value="${rec.valor??''}" placeholder="0,00"></div>
+      <div class="field"><label>Etapa atual</label><select name="fase">${options(T.fase, rec.fase||'estudo')}</select></div>
     </div>
+    <div class="field"><label>Valor do contrato (R$)</label><input name="valor" type="number" step="0.01" min="0" value="${rec.valor??''}" placeholder="0,00"></div>
     <div class="field-row">
       <div class="field"><label>Prazo de entrega</label><input name="prazo" type="date" value="${esc(rec.prazo||'')}"></div>
       <div class="field"><label>Local</label><input name="local" value="${esc(rec.local||'')}" placeholder="Cidade / bairro"></div>
@@ -719,6 +824,7 @@ const isoToDate = iso => new Date(iso + 'T00:00:00');
 const dateToISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const shiftDays = (iso, n) => { const d = isoToDate(iso); d.setDate(d.getDate()+n); return dateToISO(d); };
 const weekStart = iso => { const d = isoToDate(iso); d.setDate(d.getDate()-d.getDay()); return dateToISO(d); };
+const shiftMonths = (iso, n) => { const d = isoToDate(iso); d.setMonth(d.getMonth()+n); return dateToISO(d); };
 
 function renderCalendario() {
   $('#pageTitle').textContent = 'Calendário';
@@ -881,6 +987,7 @@ function leadForm(rec = {}) {
 }
 
 /* ---------- Clientes (contas que se cadastraram no portal) ---------- */
+const waLink = tel => { const d = String(tel||'').replace(/\D/g,''); if (!d) return null; return `https://wa.me/${d.length<=11?'55'+d:d}`; };
 function renderClientes() {
   $('#pageTitle').textContent = 'Clientes';
   setActions('');
@@ -892,18 +999,61 @@ function renderClientes() {
     </div>
     <div class="card"><div class="table-wrap">
     ${clientes.length ? `<table>
-      <thead><tr><th>Nome</th><th>E-mail</th><th>Cadastro</th><th>Projetos vinculados</th></tr></thead>
+      <thead><tr><th>Nome</th><th>Contato</th><th>Situação</th><th>Projetos</th><th></th></tr></thead>
       <tbody>${clientes.map(c => {
         const seus = projetos.filter(p => p.clientId === c.id);
+        const wa = waLink(c.telefone);
         return `<tr>
-          <td class="strong">${esc(c.name)}</td>
-          <td>${esc(c.email)}</td>
-          <td>${c.created_at ? new Date(c.created_at).toLocaleDateString('pt-BR') : '—'}</td>
-          <td>${seus.length ? seus.map(p => `<span class="badge andamento" style="margin:2px 4px 2px 0">${esc(p.nome)}</span>`).join('') : '<span class="sub">Nenhum — cliente ainda não vê projetos</span>'}</td>
+          <td class="strong">${esc(c.name)}${c.ativo===0?' <span class="badge perdido">desativada</span>':''}</td>
+          <td>
+            <div>${esc(c.email)}</div>
+            <div class="sub">${c.telefone?esc(c.telefone):'—'}${wa?` · <a href="${wa}" target="_blank" rel="noopener" style="color:var(--ok);text-decoration:none;font-weight:600">WhatsApp</a>`:''}</div>
+          </td>
+          <td>${c.ativo===0?'<span class="sub">Inativa</span>':'<span class="badge ganho">Ativa</span>'}</td>
+          <td>${seus.length ? seus.map(p => `<span class="badge andamento" style="margin:2px 4px 2px 0">${esc(p.nome)}</span>`).join('') : '<span class="sub">Nenhum</span>'}</td>
+          <td class="actions">
+            <button class="icon-btn" data-edit-cli="${c.id}">Editar</button>
+            <button class="icon-btn" data-senha="${c.id}">Resetar senha</button>
+            <button class="icon-btn danger" data-del-cli="${c.id}">Excluir</button>
+          </td>
         </tr>`;
       }).join('')}</tbody>
     </table>` : `<div class="empty"><strong>Nenhum cliente cadastrado ainda.</strong>Quando um cliente criar conta em /registrar, ele aparece aqui.</div>`}
     </div></div>`;
+
+  view().querySelectorAll('[data-edit-cli]').forEach(b => b.onclick = () => clienteForm(DB.get('clientes', b.dataset.editCli)));
+  view().querySelectorAll('[data-senha]').forEach(b => b.onclick = () => resetSenha(DB.get('clientes', b.dataset.senha)));
+  view().querySelectorAll('[data-del-cli]').forEach(b => b.onclick = () => {
+    const c = DB.get('clientes', b.dataset.delCli);
+    confirmDelete(`o cliente ${c.name}`, async () => { await api('DELETE', `/admin/clientes/${c.id}`); await DB.load(); renderClientes(); toast('Cliente removido.'); });
+  });
+}
+function clienteForm(c) {
+  openModal('Editar cliente', `
+    <div class="field"><label>Nome *</label><input name="name" required value="${esc(c.name)}"></div>
+    <div class="field-row">
+      <div class="field"><label>E-mail *</label><input name="email" type="email" required value="${esc(c.email)}"></div>
+      <div class="field"><label>Telefone / WhatsApp</label><input name="telefone" value="${esc(c.telefone||'')}" placeholder="(79) 99999-0000"></div>
+    </div>
+    <div class="field"><label>Situação da conta</label><select name="ativo">
+      <option value="1"${c.ativo!==0?' selected':''}>Ativa</option>
+      <option value="0"${c.ativo===0?' selected':''}>Desativada (não consegue entrar)</option>
+    </select></div>
+  `, async fd => {
+    await api('PUT', `/admin/clientes/${c.id}`, { name: fd.name, email: fd.email, telefone: fd.telefone, ativo: fd.ativo });
+    await DB.load(); renderClientes(); toast('Cliente atualizado.');
+  });
+}
+async function resetSenha(c) {
+  if (!confirm(`Gerar uma nova senha para ${c.name}? A senha atual deixa de funcionar.`)) return;
+  try {
+    const r = await api('POST', `/admin/clientes/${c.id}/senha`);
+    openModal('Nova senha gerada', `
+      <p style="font-size:14px">Nova senha de <strong>${esc(c.name)}</strong>:</p>
+      <p style="font-size:24px;font-weight:700;letter-spacing:1px;color:var(--bordeaux);margin:14px 0">${esc(r.senha)}</p>
+      <p class="sub">Copie e repasse ao cliente. Também enviamos por e-mail para ${esc(c.email)}.</p>
+    `, () => true, 'Ok');
+  } catch (e) { toast(e.message || 'Erro ao resetar senha.'); }
 }
 
 /* ============================================================

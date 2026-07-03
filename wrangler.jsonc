@@ -14,5 +14,8 @@
       "database_name": "estudiogece-db",
       "database_id": "5bfd77ac-4ff4-43fa-81b3-fbf59eaf3a9c"
     }
-  ]
+  ],
+  "triggers": {
+    "crons": ["0 12 * * *"]
+  }
 }

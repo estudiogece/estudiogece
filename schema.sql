@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   password_salt TEXT NOT NULL,
   role          TEXT NOT NULL DEFAULT 'client', -- 'admin' | 'client'
+  telefone      TEXT,
+  ativo         INTEGER DEFAULT 1,              -- 0 = conta desativada (não loga)
   created_at    INTEGER NOT NULL
 );
 
@@ -18,6 +20,7 @@ CREATE TABLE IF NOT EXISTS projetos (
   client_id  TEXT REFERENCES users(id) ON DELETE SET NULL, -- conta de cliente vinculada
   tipologia  TEXT,
   status     TEXT,
+  fase       TEXT,      -- etapa: estudo|anteprojeto|executivo|obra|entregue
   valor      REAL,
   prazo      TEXT,
   local      TEXT,
