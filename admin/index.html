@@ -259,6 +259,9 @@
   .evt-pill .t { opacity: .7; margin-right: 4px; }
   .cal-more { font-size: 10.5px; color: var(--muted); font-weight: 600; }
   .evt-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  .evt-pill[draggable="true"] { cursor: grab; }
+  .evt-pill.dragging { opacity: .4; }
+  .cal-cell.drag-over, .wk-col.drag-over { outline: 2px solid var(--bordeaux); outline-offset: -2px; background: #f1e6e8; }
 
   /* Calendário estilo Fantastical: calendário + agenda lateral */
   .cal-layout { display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 20px; align-items: start; }
@@ -935,7 +938,26 @@ function finForm(rec = {}) {
 const WEEK = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const EVT_COR = { reuniao:'#3d6b8a', visita:'#3f6b4f', entrega:'#7a2438', obra:'#b3762c', outro:'#8a7a7d' };
 const evtColor = e => EVT_COR[e && e.tipo] || '#8a7a7d';
-const evtPill = e => `<div class="evt-pill" data-edit="${e.id}" title="${esc(e.titulo)}" style="background:${evtColor(e)}1a;color:${evtColor(e)}"><span class="evt-dot" style="background:${evtColor(e)}"></span>${e.hora?`<span class="t">${e.hora}</span>`:''}${esc(e.titulo)}</div>`;
+const evtPill = e => `<div class="evt-pill" draggable="true" data-edit="${e.id}" title="${esc(e.titulo)}" style="background:${evtColor(e)}1a;color:${evtColor(e)}"><span class="evt-dot" style="background:${evtColor(e)}"></span>${e.hora?`<span class="t">${e.hora}</span>`:''}${esc(e.titulo)}</div>`;
+// Arrastar um cartão (evento/post) para outro dia: atualiza o campo "data".
+function wireDayDrag(container, coll, pillSel, reRender, onDrop) {
+  container.querySelectorAll(pillSel).forEach(p => {
+    p.ondragstart = e => { e.dataTransfer.setData('text/plain', p.dataset.edit || p.dataset.id); e.dataTransfer.effectAllowed = 'move'; p.classList.add('dragging'); };
+    p.ondragend = () => p.classList.remove('dragging');
+  });
+  container.querySelectorAll('[data-day]').forEach(c => {
+    c.ondragover = e => { e.preventDefault(); c.classList.add('drag-over'); };
+    c.ondragleave = () => c.classList.remove('drag-over');
+    c.ondrop = async e => {
+      e.preventDefault(); c.classList.remove('drag-over');
+      const rec = DB.get(coll, e.dataTransfer.getData('text/plain'));
+      if (rec && rec.data !== c.dataset.day) {
+        try { await DB.upsert(coll, { ...rec, data: c.dataset.day, ...(onDrop ? onDrop(rec) : {}) }); reRender(); toast('Movido para ' + fmtDate(c.dataset.day) + '.'); }
+        catch (err) { toast(err.message || 'Erro ao mover.'); }
+      }
+    };
+  });
+}
 let calState = { view: 'semana', y: new Date().getFullYear(), m: new Date().getMonth(), anchor: todayISO() };
 const isoToDate = iso => new Date(iso + 'T00:00:00');
 const dateToISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -1000,6 +1022,7 @@ function renderCalMonth() {
     </div>`;
   main.querySelectorAll('.cal-cell[data-day]').forEach(c => c.onclick = e => { if (e.target.closest('.evt-pill')) return; eventoForm({ data: c.dataset.day }); });
   main.querySelectorAll('.evt-pill[data-edit]').forEach(p => p.onclick = () => eventoForm(DB.get('eventos', p.dataset.edit)));
+  wireDayDrag(main, 'eventos', '.evt-pill[data-edit]', renderCalendario);
 }
 
 function renderCalWeek() {
@@ -1022,6 +1045,7 @@ function renderCalWeek() {
   main.innerHTML = `<div class="cal-title">${label}</div><div class="cal wk-grid">${cols}</div>`;
   main.querySelectorAll('.wk-col[data-day]').forEach(c => c.onclick = e => { if (e.target.closest('.evt-pill')) return; eventoForm({ data: c.dataset.day }); });
   main.querySelectorAll('.evt-pill[data-edit]').forEach(p => p.onclick = () => eventoForm(DB.get('eventos', p.dataset.edit)));
+  wireDayDrag(main, 'eventos', '.evt-pill[data-edit]', renderCalendario);
 }
 
 function renderAgenda() {
@@ -1303,23 +1327,27 @@ function renderPostCalendar(posts) {
     const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const evs = byDay[iso] || [];
     const isToday = iso === todayISO();
-    const shown = evs.slice(0, 3).map(p => `<div class="evt-pill" data-id="${p.id}" title="${esc(p.titulo)}" style="background:${(CANAL_COR[p.canal]||'#8a7a7d')}1a;color:${CANAL_COR[p.canal]||'#8a7a7d'}">${esc(p.titulo)}</div>`).join('');
-    const more = evs.length > 3 ? `<div class="cal-more">+${evs.length - 3}</div>` : '';
+    const shown = evs.slice(0, 4).map(p => `<div class="evt-pill" draggable="true" data-id="${p.id}" title="${esc(p.titulo)}" style="background:${(CANAL_COR[p.canal]||'#8a7a7d')}1a;color:${CANAL_COR[p.canal]||'#8a7a7d'}"><span class="evt-dot" style="background:${CANAL_COR[p.canal]||'#8a7a7d'}"></span>${esc(p.titulo)}</div>`).join('');
+    const more = evs.length > 4 ? `<div class="cal-more">+${evs.length - 4}</div>` : '';
     cells.push(`<div class="cal-cell${isToday?' today':''}" data-day="${iso}"><div class="day-num">${d}</div>${shown}${more}</div>`);
   }
   while (cells.length % 7 !== 0) cells.push(`<div class="cal-cell other"></div>`);
-  $('#conteudoView').innerHTML = `
+  const root = $('#conteudoView');
+  root.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin:2px 0 12px">
       <button class="btn subtle sm" id="pcPrev">‹</button>
+      <button class="btn subtle sm" id="pcToday">Hoje</button>
       <button class="btn subtle sm" id="pcNext">›</button>
       <strong style="text-transform:capitalize">${monthName}</strong>
-      <span class="sub" style="margin-left:auto">clique num dia para agendar</span>
+      <span class="sub" style="margin-left:auto">arraste um post para outro dia · clique num dia para agendar</span>
     </div>
     <div class="cal"><div class="cal-head">${WEEK.map(w => `<div>${w}</div>`).join('')}</div><div class="cal-grid">${cells.join('')}</div></div>`;
   $('#pcPrev').onclick = () => { postCal.m--; if (postCal.m < 0) { postCal.m = 11; postCal.y--; } renderMarketing(); };
   $('#pcNext').onclick = () => { postCal.m++; if (postCal.m > 11) { postCal.m = 0; postCal.y++; } renderMarketing(); };
-  $('#conteudoView').querySelectorAll('.cal-cell[data-day]').forEach(c => c.onclick = e => { if (e.target.closest('.evt-pill')) return; postForm({ data: c.dataset.day, status: 'agendado' }); });
-  $('#conteudoView').querySelectorAll('.evt-pill[data-id]').forEach(p => p.onclick = () => postForm(DB.get('posts', p.dataset.id)));
+  $('#pcToday').onclick = () => { const d = new Date(); postCal.y = d.getFullYear(); postCal.m = d.getMonth(); renderMarketing(); };
+  root.querySelectorAll('.cal-cell[data-day]').forEach(c => c.onclick = e => { if (e.target.closest('.evt-pill')) return; postForm({ data: c.dataset.day, status: 'agendado' }); });
+  root.querySelectorAll('.evt-pill[data-id]').forEach(p => p.onclick = () => postForm(DB.get('posts', p.dataset.id)));
+  wireDayDrag(root, 'posts', '.evt-pill[data-id]', renderMarketing, rec => (rec.status === 'ideia' ? { status: 'agendado' } : {}));
 }
 function postForm(rec = {}) {
   openModal(rec.id ? 'Editar post' : 'Novo post', `
