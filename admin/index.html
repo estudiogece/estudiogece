@@ -259,6 +259,9 @@
   .evt-pill .t { opacity: .7; margin-right: 4px; }
   .cal-more { font-size: 10.5px; color: var(--muted); font-weight: 600; }
   .evt-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  .drive-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+  .drive-dot.on { background: var(--ok); }
+  .drive-dot.off { background: #d6cacc; }
   .evt-pill[draggable="true"] { cursor: grab; }
   .evt-pill.dragging { opacity: .4; }
   .cal-cell.drag-over, .wk-col.drag-over { outline: 2px solid var(--bordeaux); outline-offset: -2px; background: #f1e6e8; }
@@ -796,7 +799,7 @@ function renderProjetos() {
       <thead><tr><th>Projeto</th><th>Cliente</th><th>Tipologia</th><th>Status</th><th class="num">Valor</th><th>Prazo</th><th></th></tr></thead>
       <tbody>${list.map(p => `
         <tr>
-          <td class="strong">${esc(p.nome)}${p.clientId?` <span class="badge ganho" title="Vinculado à conta ${esc(p.clientEmail||'')}">conta</span>`:''}</td>
+          <td class="strong"><span class="drive-dot ${p.arquivos&&p.arquivos.length?'on':'off'}" title="${p.arquivos&&p.arquivos.length?'Arquivo do Drive vinculado':'Sem arquivo do Drive — lembre de vincular'}"></span>${esc(p.nome)}${p.clientId?` <span class="badge ganho" title="Vinculado à conta ${esc(p.clientEmail||'')}">conta</span>`:''}</td>
           <td>${esc(p.cliente||'—')}</td>
           <td>${T.tipologia[p.tipologia]||'—'}</td>
           <td>${badge(p.status, T.projStatus[p.status]||p.status)}</td>
