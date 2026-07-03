@@ -819,7 +819,7 @@ function finForm(rec = {}) {
 
 /* ---------- Calendário ---------- */
 const WEEK = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-let calState = { view: 'mes', y: new Date().getFullYear(), m: new Date().getMonth(), anchor: todayISO() };
+let calState = { view: 'semana', y: new Date().getFullYear(), m: new Date().getMonth(), anchor: todayISO() };
 const isoToDate = iso => new Date(iso + 'T00:00:00');
 const dateToISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const shiftDays = (iso, n) => { const d = isoToDate(iso); d.setDate(d.getDate()+n); return dateToISO(d); };
@@ -830,8 +830,8 @@ function renderCalendario() {
   $('#pageTitle').textContent = 'Calendário';
   setActions(`
     <div class="seg">
-      <button class="seg-btn${calState.view==='mes'?' active':''}" id="calMes">Mês</button>
       <button class="seg-btn${calState.view==='semana'?' active':''}" id="calSemana">Semana</button>
+      <button class="seg-btn${calState.view==='mes'?' active':''}" id="calMes">Mês</button>
     </div>
     <button class="btn subtle sm" id="calPrev">‹</button>
     <button class="btn subtle sm" id="calToday">Hoje</button>
