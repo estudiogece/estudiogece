@@ -210,6 +210,23 @@
   .pay-gen { border-top: 1px solid var(--line); padding-top: 16px; }
   .pay-gen-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; }
 
+  /* Quadro de conteúdo (Kanban) */
+  .kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; align-items: start; }
+  .kb-col { background: #fbf8f6; border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; min-height: 160px; transition: background .12s ease, border-color .12s ease; }
+  .kb-col.drag-over { background: #f1e6e8; border-color: var(--bordeaux); }
+  .kb-col h3 { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+  .kb-col h3 span { background: #eee7e8; color: var(--bordeaux); border-radius: 20px; padding: 1px 8px; font-size: 11px; }
+  .kb-add { width: 100%; font-family: inherit; font-size: 12.5px; padding: 9px 10px; border: 1px dashed var(--line); border-radius: 8px; background: #fff; margin-bottom: 10px; }
+  .kb-add:focus { outline: none; border-color: var(--bordeaux); border-style: solid; }
+  .kb-card { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; cursor: grab; box-shadow: 0 1px 2px rgba(33,16,19,.05); transition: box-shadow .12s ease, transform .12s ease; }
+  .kb-card:hover { box-shadow: 0 6px 16px -8px rgba(86,22,36,.35); transform: translateY(-1px); }
+  .kb-card.dragging { opacity: .4; }
+  .kb-card .t { font-weight: 600; font-size: 13.5px; line-height: 1.25; margin-bottom: 8px; }
+  .kb-card .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 11px; color: var(--muted); }
+  .kb-chip { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 2px 7px; border-radius: 20px; background: #f3ebec; color: var(--bordeaux); }
+  @media (max-width: 900px) { .kanban { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .kanban { grid-template-columns: 1fr; } }
+
   /* Lembretes */
   .lembrete .l-txt { font-size: 14px; }
   .lembrete.feito .l-txt { text-decoration: line-through; color: var(--muted); }
@@ -1117,7 +1134,7 @@ const CAMP_BADGE = { planejada:'neutral', ativa:'andamento', concluida:'ganho' }
 let marketingTab = 'conteudo';
 function renderMarketing() {
   $('#pageTitle').textContent = 'Marketing';
-  const acao = { conteudo:`<button class="btn" id="novoPost">+ Novo post</button>`, campanhas:`<button class="btn" id="novaCampanha">+ Nova campanha</button>`, leads:`<button class="btn" id="novoLead">+ Novo lead</button>` }[marketingTab];
+  const acao = { conteudo:`<button class="btn" id="novoPost">+ Nova ideia</button>`, campanhas:`<button class="btn" id="novaCampanha">+ Nova campanha</button>`, leads:`<button class="btn" id="novoLead">+ Novo lead</button>` }[marketingTab];
   setActions(`
     <div class="seg">
       <button class="seg-btn${marketingTab==='conteudo'?' active':''}" id="mkConteudo">Conteúdo</button>
@@ -1132,37 +1149,96 @@ function renderMarketing() {
   else if (marketingTab === 'campanhas') { renderCampanhas(); const b=$('#novaCampanha'); if (b) b.onclick = () => campanhaForm(); }
   else { renderLeadsBody(); const b=$('#novoLead'); if (b) b.onclick = () => leadForm(); }
 }
+let conteudoView = 'quadro';
+let postCal = { y: new Date().getFullYear(), m: new Date().getMonth() };
+const POST_COLS = [['ideia','Ideias'],['producao','Em produção'],['agendado','Agendado'],['publicado','Publicado']];
+const CANAL_COR = { instagram:'#c13584', facebook:'#1877f2', tiktok:'#111', linkedin:'#0a66c2', youtube:'#ff0000', site:'#561624', googleads:'#188038', outro:'#8a7a7d' };
+
 function renderConteudo() {
-  const posts = DB.all('posts').slice().sort((a,b)=>(b.data||'').localeCompare(a.data||''));
-  const agendados = posts.filter(p=>p.status==='agendado').length;
-  const publicados = posts.filter(p=>p.status==='publicado');
-  const alcanceTot = publicados.reduce((s,p)=>s+(Number(p.alcance)||0),0);
+  const posts = DB.all('posts');
   view().innerHTML = `
-    <section class="grid" style="grid-template-columns:repeat(3,1fr)">
-      <div class="stat-card"><div class="label">Agendados</div><div class="value">${agendados}</div></div>
-      <div class="stat-card"><div class="label">Publicados</div><div class="value">${publicados.length}</div></div>
-      <div class="stat-card"><div class="label">Alcance (publicados)</div><div class="value">${alcanceTot.toLocaleString('pt-BR')}</div></div>
-    </section>
-    <div class="card"><div class="table-wrap">
-    ${posts.length ? `<table>
-      <thead><tr><th>Data</th><th>Canal</th><th>Post</th><th>Status</th><th class="num">Alcance</th><th class="num">Curtidas</th><th></th></tr></thead>
-      <tbody>${posts.map(p=>`
-        <tr>
-          <td>${p.data?fmtDate(p.data):'—'}</td>
-          <td>${T.canal[p.canal]||'—'}</td>
-          <td class="strong">${esc(p.titulo)}</td>
-          <td>${badge(POST_BADGE[p.status]||'neutral', T.postStatus[p.status]||p.status)}</td>
-          <td class="num">${p.alcance?Number(p.alcance).toLocaleString('pt-BR'):'—'}</td>
-          <td class="num">${p.curtidas?Number(p.curtidas).toLocaleString('pt-BR'):'—'}</td>
-          <td class="actions">
-            <button class="icon-btn" data-edit="${p.id}">Editar</button>
-            <button class="icon-btn danger" data-del="${p.id}">Excluir</button>
-          </td>
-        </tr>`).join('')}</tbody>
-    </table>` : `<div class="empty"><strong>Nenhum post planejado.</strong>Planeje suas publicações de Instagram, Facebook e afins.</div>`}
-    </div></div>`;
-  view().querySelectorAll('[data-edit]').forEach(b => b.onclick = () => postForm(DB.get('posts', b.dataset.edit)));
-  view().querySelectorAll('[data-del]').forEach(b => b.onclick = () => { const p = DB.get('posts', b.dataset.del); confirmDelete(p.titulo, async () => { await DB.remove('posts', p.id); renderMarketing(); toast('Post removido.'); }); });
+    <div class="toolbar" style="justify-content:space-between">
+      <div class="seg">
+        <button class="seg-btn${conteudoView==='quadro'?' active':''}" id="cvQuadro">Quadro</button>
+        <button class="seg-btn${conteudoView==='calendario'?' active':''}" id="cvCal">Calendário</button>
+      </div>
+      <span class="sub">${posts.length} ${posts.length===1?'ideia/post':'ideias e posts'} · arraste os cartões entre as colunas</span>
+    </div>
+    <div id="conteudoView"></div>`;
+  $('#cvQuadro').onclick = () => { conteudoView='quadro'; renderConteudo(); };
+  $('#cvCal').onclick = () => { conteudoView='calendario'; renderConteudo(); };
+  if (conteudoView === 'quadro') renderKanban(posts); else renderPostCalendar(posts);
+}
+
+function renderKanban(posts) {
+  const cols = POST_COLS.map(([s,label]) => {
+    const list = posts.filter(p => (p.status||'ideia') === s).sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+    return `<div class="kb-col" data-status="${s}">
+      <h3>${label}<span>${list.length}</span></h3>
+      ${s==='ideia' ? `<input class="kb-add" id="kbAdd" placeholder="+ Nova ideia…">` : ''}
+      <div class="kb-cards">${list.map(p => `
+        <div class="kb-card" draggable="true" data-id="${p.id}" style="border-left:3px solid ${CANAL_COR[p.canal]||'#8a7a7d'}">
+          <div class="t">${esc(p.titulo)}</div>
+          <div class="meta"><span class="kb-chip">${T.canal[p.canal]||'—'}</span>${p.data?`<span>${fmtDate(p.data)}</span>`:''}${(p.status==='publicado'&&p.alcance)?`<span>${Number(p.alcance).toLocaleString('pt-BR')} alcance</span>`:''}</div>
+        </div>`).join('')}</div>
+    </div>`;
+  }).join('');
+  $('#conteudoView').innerHTML = `<div class="kanban">${cols}</div>`;
+
+  const add = $('#kbAdd');
+  if (add) add.onkeydown = async e => {
+    if (e.key === 'Enter' && add.value.trim()) {
+      const titulo = add.value.trim(); add.disabled = true;
+      try { await DB.upsert('posts', { titulo, status: 'ideia', canal: 'instagram' }); renderMarketing(); }
+      catch (err) { toast(err.message || 'Erro.'); add.disabled = false; }
+    }
+  };
+  $('#conteudoView').querySelectorAll('.kb-card').forEach(c => {
+    c.onclick = () => postForm(DB.get('posts', c.dataset.id));
+    c.ondragstart = e => { e.dataTransfer.setData('text/plain', c.dataset.id); c.classList.add('dragging'); };
+    c.ondragend = () => c.classList.remove('dragging');
+  });
+  $('#conteudoView').querySelectorAll('.kb-col').forEach(col => {
+    col.ondragover = e => { e.preventDefault(); col.classList.add('drag-over'); };
+    col.ondragleave = () => col.classList.remove('drag-over');
+    col.ondrop = async e => {
+      e.preventDefault(); col.classList.remove('drag-over');
+      const p = DB.get('posts', e.dataTransfer.getData('text/plain'));
+      if (p && p.status !== col.dataset.status) { await DB.upsert('posts', { ...p, status: col.dataset.status }); renderMarketing(); }
+    };
+  });
+}
+
+function renderPostCalendar(posts) {
+  const { y, m } = postCal;
+  const monthName = new Date(y, m, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const first = new Date(y, m, 1).getDay();
+  const days = new Date(y, m + 1, 0).getDate();
+  const byDay = {};
+  posts.forEach(p => { if (p.data) (byDay[p.data] = byDay[p.data] || []).push(p); });
+  const cells = [];
+  for (let i = 0; i < first; i++) cells.push(`<div class="cal-cell other"></div>`);
+  for (let d = 1; d <= days; d++) {
+    const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const evs = byDay[iso] || [];
+    const isToday = iso === todayISO();
+    const shown = evs.slice(0, 3).map(p => `<div class="evt-pill" data-id="${p.id}" title="${esc(p.titulo)}" style="background:${(CANAL_COR[p.canal]||'#8a7a7d')}1a;color:${CANAL_COR[p.canal]||'#8a7a7d'}">${esc(p.titulo)}</div>`).join('');
+    const more = evs.length > 3 ? `<div class="cal-more">+${evs.length - 3}</div>` : '';
+    cells.push(`<div class="cal-cell${isToday?' today':''}" data-day="${iso}"><div class="day-num">${d}</div>${shown}${more}</div>`);
+  }
+  while (cells.length % 7 !== 0) cells.push(`<div class="cal-cell other"></div>`);
+  $('#conteudoView').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:2px 0 12px">
+      <button class="btn subtle sm" id="pcPrev">‹</button>
+      <button class="btn subtle sm" id="pcNext">›</button>
+      <strong style="text-transform:capitalize">${monthName}</strong>
+      <span class="sub" style="margin-left:auto">clique num dia para agendar</span>
+    </div>
+    <div class="cal"><div class="cal-head">${WEEK.map(w => `<div>${w}</div>`).join('')}</div><div class="cal-grid">${cells.join('')}</div></div>`;
+  $('#pcPrev').onclick = () => { postCal.m--; if (postCal.m < 0) { postCal.m = 11; postCal.y--; } renderMarketing(); };
+  $('#pcNext').onclick = () => { postCal.m++; if (postCal.m > 11) { postCal.m = 0; postCal.y++; } renderMarketing(); };
+  $('#conteudoView').querySelectorAll('.cal-cell[data-day]').forEach(c => c.onclick = e => { if (e.target.closest('.evt-pill')) return; postForm({ data: c.dataset.day, status: 'agendado' }); });
+  $('#conteudoView').querySelectorAll('.evt-pill[data-id]').forEach(p => p.onclick = () => postForm(DB.get('posts', p.dataset.id)));
 }
 function postForm(rec = {}) {
   openModal(rec.id ? 'Editar post' : 'Novo post', `
@@ -1179,7 +1255,10 @@ function postForm(rec = {}) {
       <div class="field"><label>Curtidas</label><input name="curtidas" type="number" min="0" value="${rec.curtidas??''}" placeholder="0"></div>
     </div>
     <div class="field"><label>Notas</label><textarea name="notas" placeholder="Ideias, referências…">${esc(rec.notas||'')}</textarea></div>
+    ${rec.id?`<button type="button" class="btn subtle sm" id="postDel" style="color:var(--danger)">Excluir</button>`:''}
   `, async fd => { await DB.upsert('posts', { ...rec, ...fd }); renderMarketing(); toast(rec.id?'Post atualizado.':'Post criado.'); });
+  const del = $('#postDel');
+  if (del) del.onclick = async () => { if (!confirm('Excluir este item?')) return; await DB.remove('posts', rec.id); $('#modalRoot').innerHTML=''; renderMarketing(); toast('Item removido.'); };
 }
 function renderCampanhas() {
   const camps = DB.all('campanhas').slice().sort((a,b)=>(b.created_at||0)-(a.created_at||0));
