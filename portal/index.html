@@ -62,6 +62,23 @@
   .pay-sum { display:flex; flex-wrap:wrap; gap:10px 24px; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:14px 18px; font-size:13.5px; color:var(--muted); margin-bottom:12px; }
   .pay-sum strong { color:var(--ink); }
   @media (max-width:640px){ .proj-body{ grid-template-columns:1fr 1fr; } .step .lbl{ font-size:9px; } }
+  /* Modal trocar senha */
+  .overlay { position:fixed; inset:0; background:rgba(33,16,19,.42); display:flex; align-items:flex-start; justify-content:center; padding:60px 20px; z-index:50; overflow-y:auto; }
+  .modal { background:#fff; border-radius:14px; width:100%; max-width:420px; box-shadow:0 30px 60px -30px rgba(86,22,36,.5); }
+  .modal-head { display:flex; justify-content:space-between; align-items:center; padding:20px 24px; border-bottom:1px solid var(--line); }
+  .modal-head h3 { font-size:17px; font-weight:700; }
+  .modal-body { padding:22px 24px; }
+  .modal .field { margin-bottom:14px; }
+  .modal .field label { display:block; font-size:12.5px; font-weight:600; margin-bottom:6px; }
+  .modal .field input { width:100%; font-family:inherit; font-size:15px; padding:10px 12px; border:1px solid var(--line); border-radius:var(--radius); }
+  .modal .field input:focus { outline:none; border-color:var(--bordeaux); box-shadow:0 0 0 3px rgba(86,22,36,.1); }
+  .modal .msg { font-size:13px; border-radius:var(--radius); padding:9px 12px; margin-bottom:14px; display:none; }
+  .modal .msg.show { display:block; }
+  .modal .msg.err { color:var(--danger); background:#f6dede; } .modal .msg.ok { color:var(--ok); background:#e2ede5; }
+  .x-btn { background:none; border:none; font-size:16px; color:var(--muted); cursor:pointer; }
+  .modal .actions { display:flex; justify-content:flex-end; gap:10px; margin-top:4px; }
+  .modal .btn { font-family:inherit; font-size:14px; font-weight:600; background:var(--bordeaux); color:#fff; border:none; border-radius:var(--radius); padding:10px 18px; cursor:pointer; }
+  .modal .btn.ghost { background:#fff; color:var(--ink); border:1px solid var(--line); }
 </style>
 </head>
 <body>
@@ -71,10 +88,14 @@
         <img class="mark" src="/assets/img/selo-branca.svg" alt="Estúdio Gecê" />
         <div class="txt">ESTÚDIO GECÊ<span>Portal do cliente</span></div>
       </div>
-      <button class="logout" id="logout">Sair</button>
+      <div style="display:flex;gap:8px">
+        <button class="logout" id="trocarSenha">Trocar senha</button>
+        <button class="logout" id="logout">Sair</button>
+      </div>
     </div>
   </div>
   <main id="app"><div class="loading">Carregando…</div></main>
+  <div id="modalRoot"></div>
 
 <script>
   const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -99,6 +120,55 @@
   document.getElementById('logout').onclick = async () => {
     try { await fetch('/api/logout', { method:'POST' }); } catch {}
     location.href = '/login';
+  };
+
+  document.getElementById('trocarSenha').onclick = () => {
+    const root = document.getElementById('modalRoot');
+    const close = () => { root.innerHTML = ''; };
+    root.innerHTML = `
+      <div class="overlay" id="ov">
+        <form class="modal" id="pwForm" autocomplete="off">
+          <div class="modal-head"><h3>Trocar senha</h3><button type="button" class="x-btn" id="pwClose">✕</button></div>
+          <div class="modal-body">
+            <div class="msg" id="pwMsg"></div>
+            <div class="field"><label>Senha atual</label><input type="password" id="atual" required autocomplete="current-password"></div>
+            <div class="field"><label>Nova senha (mín. 6)</label><input type="password" id="nova" required minlength="6" autocomplete="new-password"></div>
+            <div class="field"><label>Confirmar nova senha</label><input type="password" id="conf" required autocomplete="new-password"></div>
+            <div class="actions">
+              <button type="button" class="btn ghost" id="pwCancel">Cancelar</button>
+              <button type="submit" class="btn" id="pwSave">Salvar</button>
+            </div>
+          </div>
+        </form>
+      </div>`;
+    const msg = document.getElementById('pwMsg');
+    document.getElementById('pwClose').onclick = close;
+    document.getElementById('pwCancel').onclick = close;
+    document.getElementById('ov').onclick = e => { if (e.target.id === 'ov') close(); };
+    document.getElementById('pwForm').onsubmit = async e => {
+      e.preventDefault();
+      msg.className = 'msg';
+      const atual = document.getElementById('atual').value;
+      const nova = document.getElementById('nova').value;
+      const conf = document.getElementById('conf').value;
+      if (nova !== conf) { msg.textContent = 'A confirmação não confere.'; msg.className = 'msg err show'; return; }
+      const btn = document.getElementById('pwSave'); btn.disabled = true; btn.textContent = 'Salvando…';
+      try {
+        const res = await fetch('/api/portal/senha', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ atual, nova }) });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok) {
+          msg.textContent = 'Senha alterada com sucesso!'; msg.className = 'msg ok show';
+          setTimeout(close, 1200);
+        } else {
+          msg.textContent = data.error || 'Não foi possível trocar a senha.'; msg.className = 'msg err show';
+          btn.disabled = false; btn.textContent = 'Salvar';
+        }
+      } catch {
+        msg.textContent = 'Erro de conexão.'; msg.className = 'msg err show';
+        btn.disabled = false; btn.textContent = 'Salvar';
+      }
+    };
+    document.getElementById('atual').focus();
   };
 
   (async () => {

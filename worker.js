@@ -471,6 +471,24 @@ async function handleClienteDelete(env, id) {
   await env.DB.prepare("DELETE FROM users WHERE id=? AND role='client'").bind(id).run();
   return json({ ok: true });
 }
+async function handleClienteCreate(env, b) {
+  const name = String(b.name || "").trim();
+  const email = String(b.email || "").trim().toLowerCase();
+  if (!name || !emailOk(email)) return json({ ok: false, error: "Nome e e-mail válidos são obrigatórios." }, 400);
+  if (email === ADMIN_EMAIL.toLowerCase()) return json({ ok: false, error: "E-mail indisponível." }, 409);
+  const dup = await env.DB.prepare("SELECT id FROM users WHERE email=?").bind(email).first();
+  if (dup) return json({ ok: false, error: "Já existe uma conta com este e-mail." }, 409);
+  const senha = gerarSenha();
+  const { salt, hash } = await hashPassword(senha);
+  const id = crypto.randomUUID();
+  await env.DB.prepare("INSERT INTO users (id,name,email,password_hash,password_salt,role,telefone,ativo,created_at) VALUES (?,?,?,?,?,?,?,1,?)")
+    .bind(id, name, email, hash, salt, "client", b.telefone || null, Date.now()).run();
+  try {
+    await sendMail(env, email, "Seu acesso ao portal — Estúdio Gecê",
+      mailShell(`Olá, ${firstName(name)}!`, `<p>Criamos seu acesso ao portal do Estúdio Gecê, onde você acompanha seu projeto, arquivos e pagamentos.</p><p><strong>E-mail:</strong> ${esc(email)}<br><strong>Senha provisória:</strong> <span style="font-size:18px;font-weight:700;color:#561624">${senha}</span></p><p>Ao entrar, recomendamos trocar a senha no seu portal.</p>`));
+  } catch {}
+  return json({ ok: true, senha });
+}
 async function handleClienteResetSenha(env, id) {
   const row = await env.DB.prepare("SELECT email, name FROM users WHERE id=? AND role='client'").bind(id).first();
   if (!row) return json({ ok: false, error: "Cliente não encontrado." }, 404);
@@ -499,6 +517,20 @@ async function lembrarParcelas(env) {
   }
 }
 
+async function handlePortalTrocarSenha(env, session, b) {
+  if (session.role === "admin") return json({ ok: false, error: "O admin troca a senha pelo painel." }, 400);
+  const nova = String(b.nova || "");
+  if (nova.length < 6) return json({ ok: false, error: "A nova senha deve ter ao menos 6 caracteres." }, 400);
+  const row = await env.DB.prepare("SELECT password_hash, password_salt FROM users WHERE id=?").bind(session.sub).first();
+  if (!row) return json({ ok: false }, 401);
+  if (!(await verifyPassword(String(b.atual || ""), row.password_salt, row.password_hash))) {
+    return json({ ok: false, error: "Senha atual incorreta." }, 403);
+  }
+  const { salt, hash } = await hashPassword(nova);
+  await env.DB.prepare("UPDATE users SET password_hash=?, password_salt=? WHERE id=?").bind(hash, salt, session.sub).run();
+  return json({ ok: true });
+}
+
 async function handleApiData(request, env, url) {
   const session = await sessionFrom(request, env);
   const parts = url.pathname.split("/").filter(Boolean); // ["api","admin","projetos","<id>"]
@@ -506,6 +538,7 @@ async function handleApiData(request, env, url) {
   if (parts[1] === "portal") {
     if (!session) return json({ ok: false, error: "Não autenticado." }, 401);
     if (parts[2] === "data") return handlePortalData(env, session);
+    if (parts[2] === "senha" && request.method === "POST") return handlePortalTrocarSenha(env, session, await readBody(request));
     return json({ ok: false, error: "Rota inválida." }, 404);
   }
 
@@ -514,6 +547,7 @@ async function handleApiData(request, env, url) {
     if (parts[2] === "data") return handleAdminData(env);
     if (parts[2] === "clientes") {
       const cid = parts[3];
+      if (request.method === "POST" && !cid) return handleClienteCreate(env, await readBody(request));
       if (request.method === "PUT") return handleClienteUpdate(env, cid, await readBody(request));
       if (request.method === "DELETE") return handleClienteDelete(env, cid);
       if (request.method === "POST" && parts[4] === "senha") return handleClienteResetSenha(env, cid);

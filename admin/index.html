@@ -990,7 +990,8 @@ function leadForm(rec = {}) {
 const waLink = tel => { const d = String(tel||'').replace(/\D/g,''); if (!d) return null; return `https://wa.me/${d.length<=11?'55'+d:d}`; };
 function renderClientes() {
   $('#pageTitle').textContent = 'Clientes';
-  setActions('');
+  setActions(`<button class="btn" id="novoCliente">+ Adicionar cliente</button>`);
+  $('#novoCliente').onclick = () => novoClienteForm();
   const clientes = DB.all('clientes');
   const projetos = DB.all('projetos');
   view().innerHTML = `
@@ -1027,6 +1028,25 @@ function renderClientes() {
     const c = DB.get('clientes', b.dataset.delCli);
     confirmDelete(`o cliente ${c.name}`, async () => { await api('DELETE', `/admin/clientes/${c.id}`); await DB.load(); renderClientes(); toast('Cliente removido.'); });
   });
+}
+function novoClienteForm() {
+  openModal('Adicionar cliente', `
+    <p class="sub" style="margin-bottom:16px">Cria a conta e gera uma senha provisória — mostramos aqui e enviamos por e-mail ao cliente.</p>
+    <div class="field"><label>Nome *</label><input name="name" required placeholder="Nome do cliente"></div>
+    <div class="field-row">
+      <div class="field"><label>E-mail *</label><input name="email" type="email" required placeholder="cliente@email.com"></div>
+      <div class="field"><label>Telefone / WhatsApp</label><input name="telefone" placeholder="(79) 99999-0000"></div>
+    </div>
+  `, async fd => {
+    const r = await api('POST', '/admin/clientes', { name: fd.name, email: fd.email, telefone: fd.telefone });
+    await DB.load(); renderClientes();
+    openModal('Cliente cadastrado', `
+      <p style="font-size:14px">Conta criada para <strong>${esc(fd.name)}</strong>. Senha provisória:</p>
+      <p style="font-size:24px;font-weight:700;letter-spacing:1px;color:var(--bordeaux);margin:14px 0">${esc(r.senha)}</p>
+      <p class="sub">Copie e repasse ao cliente (também enviamos por e-mail). Ele pode trocá-la no portal.</p>
+    `, () => true, 'Ok');
+    return false; // impede o auto-close de apagar o modal de sucesso
+  }, 'Criar conta');
 }
 function clienteForm(c) {
   openModal('Editar cliente', `
