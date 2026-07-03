@@ -210,6 +210,11 @@
   .pay-gen { border-top: 1px solid var(--line); padding-top: 16px; }
   .pay-gen-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; }
 
+  /* Lembretes */
+  .lembrete .l-txt { font-size: 14px; }
+  .lembrete.feito .l-txt { text-decoration: line-through; color: var(--muted); }
+  .lembrete input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--bordeaux); }
+
   /* Calendar */
   .cal { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
   .cal-head { display: grid; grid-template-columns: repeat(7,1fr); background: #fbf8f6; border-bottom: 1px solid var(--line); }
@@ -285,7 +290,6 @@
       <a href="#/projetos"><span class="dot"></span> Projetos</a>
       <a href="#/financeiro"><span class="dot"></span> Financeiro</a>
       <a href="#/calendario"><span class="dot"></span> Calendário</a>
-      <a href="#/leads"><span class="dot"></span> Leads</a>
       <a href="#/clientes"><span class="dot"></span> Clientes</a>
       <a href="#/marketing"><span class="dot"></span> Marketing</a>
     </nav>
@@ -362,7 +366,7 @@ async function api(method, path, body) {
 /* ---------- Data layer (cache local espelhando o D1) ---------- */
 const DB = {
   data: { projetos: [], financeiro: [], eventos: [], leads: [], clientes: [] },
-  cols: ['projetos','financeiro','eventos','leads','clientes','posts','campanhas'],
+  cols: ['projetos','financeiro','eventos','leads','clientes','posts','campanhas','lembretes'],
   async load() {
     const d = await api('GET', '/admin/data');
     this.cols.forEach(c => { this.data[c] = Array.isArray(d[c]) ? d[c] : []; });
@@ -628,8 +632,9 @@ const view = () => $('#view');
 const setActions = html => { $('#pageActions').innerHTML = html; };
 
 /* ---------- Dashboard ---------- */
+const saudacao = () => { const h = new Date().getHours(); return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'; };
 function renderDashboard() {
-  $('#pageTitle').textContent = 'Dashboard';
+  $('#pageTitle').textContent = `${saudacao()}, Gabriel`;
   setActions(`<span class="date" id="today"></span>`);
   $('#today').textContent = new Date().toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 
@@ -637,6 +642,7 @@ function renderDashboard() {
   const fin = DB.all('financeiro');
   const leads = DB.all('leads');
   const eventos = DB.all('eventos');
+  const lembretes = DB.all('lembretes');
 
   const receitasAbertas = fin.filter(f => f.tipo === 'receita' && effFinStatus(f) !== 'pago');
   const aReceber = receitasAbertas.reduce((s, f) => s + (Number(f.valor)||0), 0);
@@ -675,7 +681,36 @@ function renderDashboard() {
             <div class="meta">${fmtDate(e.data)}</div>
           </div>`).join('') : `<div class="empty">Sem eventos na agenda.</div>`}
       </div>
+    </section>
+    <section class="panel" style="margin-top:20px">
+      <h2>Lembretes</h2>
+      <div class="panel-sub">Notas rápidas — salvas na nuvem</div>
+      <form id="lembreteForm" style="display:flex;gap:8px;margin:6px 0 8px">
+        <input name="texto" placeholder="Escreva um lembrete e Enter…" required style="flex:1;font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius)">
+        <button type="submit" class="btn sm">Adicionar</button>
+      </form>
+      ${lembretes.length ? lembretes.map(l => `
+        <div class="row-item lembrete${l.feito?' feito':''}">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:1">
+            <input type="checkbox" data-toggle-l="${l.id}"${l.feito?' checked':''}>
+            <span class="l-txt">${esc(l.texto)}</span>
+          </label>
+          <button class="icon-btn danger" data-del-l="${l.id}">✕</button>
+        </div>`).join('') : `<div class="empty">Nenhum lembrete. Anote o que precisa lembrar.</div>`}
     </section>`;
+
+  $('#lembreteForm').onsubmit = async e => {
+    e.preventDefault();
+    const texto = e.target.texto.value.trim(); if (!texto) return;
+    try { await DB.upsert('lembretes', { texto, feito: 0 }); renderDashboard(); } catch (err) { toast(err.message||'Erro.'); }
+  };
+  view().querySelectorAll('[data-toggle-l]').forEach(b => b.onclick = async () => {
+    const l = DB.get('lembretes', b.dataset.toggleL);
+    await DB.upsert('lembretes', { ...l, feito: l.feito ? 0 : 1 }); renderDashboard();
+  });
+  view().querySelectorAll('[data-del-l]').forEach(b => b.onclick = async () => {
+    await DB.remove('lembretes', b.dataset.delL); renderDashboard();
+  });
 }
 
 /* ---------- Projetos ---------- */
@@ -935,11 +970,7 @@ function eventoForm(rec = {}) {
 
 /* ---------- Leads ---------- */
 let leadFilter = { q: '', status: '' };
-function renderLeads() {
-  $('#pageTitle').textContent = 'Leads';
-  setActions(`<button class="btn" id="novoLead">+ Novo lead</button>`);
-  $('#novoLead').onclick = () => leadForm();
-
+function renderLeadsBody() {
   let list = DB.all('leads').slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   if (leadFilter.status) list = list.filter(l => l.status === leadFilter.status);
   if (leadFilter.q) { const q = leadFilter.q.toLowerCase(); list = list.filter(l => (l.nome+' '+(l.contato||'')).toLowerCase().includes(q)); }
@@ -968,10 +999,10 @@ function renderLeads() {
     </table>` : `<div class="empty"><strong>Nenhum lead ${leadFilter.q||leadFilter.status?'encontrado':'cadastrado'}.</strong>Registre contatos e oportunidades para acompanhar a negociação.</div>`}
     </div></div>`;
 
-  $('#lq').oninput = e => { leadFilter.q = e.target.value; renderLeads(); const el=$('#lq'); el.focus(); el.setSelectionRange(el.value.length,el.value.length); };
-  $('#lstatus').onchange = e => { leadFilter.status = e.target.value; renderLeads(); };
+  $('#lq').oninput = e => { leadFilter.q = e.target.value; renderMarketing(); const el=$('#lq'); el.focus(); el.setSelectionRange(el.value.length,el.value.length); };
+  $('#lstatus').onchange = e => { leadFilter.status = e.target.value; renderMarketing(); };
   view().querySelectorAll('[data-edit]').forEach(b => b.onclick = () => leadForm(DB.get('leads', b.dataset.edit)));
-  view().querySelectorAll('[data-del]').forEach(b => b.onclick = () => { const l = DB.get('leads', b.dataset.del); confirmDelete(l.nome, async () => { await DB.remove('leads', l.id); renderLeads(); toast('Lead removido.'); }); });
+  view().querySelectorAll('[data-del]').forEach(b => b.onclick = () => { const l = DB.get('leads', b.dataset.del); confirmDelete(l.nome, async () => { await DB.remove('leads', l.id); renderMarketing(); toast('Lead removido.'); }); });
 }
 function leadForm(rec = {}) {
   openModal(rec.id ? 'Editar lead' : 'Novo lead', `
@@ -1086,16 +1117,20 @@ const CAMP_BADGE = { planejada:'neutral', ativa:'andamento', concluida:'ganho' }
 let marketingTab = 'conteudo';
 function renderMarketing() {
   $('#pageTitle').textContent = 'Marketing';
+  const acao = { conteudo:`<button class="btn" id="novoPost">+ Novo post</button>`, campanhas:`<button class="btn" id="novaCampanha">+ Nova campanha</button>`, leads:`<button class="btn" id="novoLead">+ Novo lead</button>` }[marketingTab];
   setActions(`
     <div class="seg">
       <button class="seg-btn${marketingTab==='conteudo'?' active':''}" id="mkConteudo">Conteúdo</button>
       <button class="seg-btn${marketingTab==='campanhas'?' active':''}" id="mkCampanhas">Campanhas</button>
+      <button class="seg-btn${marketingTab==='leads'?' active':''}" id="mkLeads">Leads</button>
     </div>
-    ${marketingTab==='conteudo' ? `<button class="btn" id="novoPost">+ Novo post</button>` : `<button class="btn" id="novaCampanha">+ Nova campanha</button>`}`);
+    ${acao}`);
   $('#mkConteudo').onclick = () => { marketingTab='conteudo'; renderMarketing(); };
   $('#mkCampanhas').onclick = () => { marketingTab='campanhas'; renderMarketing(); };
+  $('#mkLeads').onclick = () => { marketingTab='leads'; renderMarketing(); };
   if (marketingTab === 'conteudo') { renderConteudo(); const b=$('#novoPost'); if (b) b.onclick = () => postForm(); }
-  else { renderCampanhas(); const b=$('#novaCampanha'); if (b) b.onclick = () => campanhaForm(); }
+  else if (marketingTab === 'campanhas') { renderCampanhas(); const b=$('#novaCampanha'); if (b) b.onclick = () => campanhaForm(); }
+  else { renderLeadsBody(); const b=$('#novoLead'); if (b) b.onclick = () => leadForm(); }
 }
 function renderConteudo() {
   const posts = DB.all('posts').slice().sort((a,b)=>(b.data||'').localeCompare(a.data||''));
@@ -1208,7 +1243,6 @@ const ROUTES = {
   projetos: renderProjetos,
   financeiro: renderFinanceiro,
   calendario: renderCalendario,
-  leads: renderLeads,
   clientes: renderClientes,
   marketing: renderMarketing,
 };
