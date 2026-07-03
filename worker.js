@@ -314,7 +314,7 @@ async function handleMe(request, env) {
 // API de dados (D1). Campos expostos em camelCase -> colunas no banco.
 // ============================================================
 const TABLES = {
-  projetos: { nome: "nome", cliente: "cliente", clientId: "client_id", tipologia: "tipologia", status: "status", fase: "fase", valor: "valor", prazo: "prazo", local: "local", notas: "notas" },
+  projetos: { nome: "nome", cliente: "cliente", clientId: "client_id", tipologia: "tipologia", status: "status", fase: "fase", etapas: "etapas", valor: "valor", prazo: "prazo", local: "local", notas: "notas" },
   financeiro: { descricao: "descricao", tipo: "tipo", valor: "valor", vencimento: "vencimento", status: "status", projetoId: "projeto_id" },
   eventos: { titulo: "titulo", data: "data", hora: "hora", tipo: "tipo", projetoId: "projeto_id", notas: "notas" },
   leads: { nome: "nome", contato: "contato", origem: "origem", interesse: "interesse", status: "status", valor: "valor", notas: "notas" },
@@ -327,7 +327,7 @@ const selectList = (table) => ["id", "created_at", ...Object.entries(TABLES[tabl
 
 async function projetosWithClient(env, whereClientId) {
   let sql = `SELECT p.id, p.created_at, p.nome, p.cliente, p.client_id AS clientId, p.tipologia, p.status,
-    p.fase, p.valor, p.prazo, p.local, p.notas, u.name AS clientNome, u.email AS clientEmail
+    p.fase, p.etapas, p.valor, p.prazo, p.local, p.notas, u.name AS clientNome, u.email AS clientEmail
     FROM projetos p LEFT JOIN users u ON u.id = p.client_id`;
   const binds = [];
   if (whereClientId) { sql += " WHERE p.client_id = ?"; binds.push(whereClientId); }

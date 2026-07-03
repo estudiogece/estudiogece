@@ -110,11 +110,13 @@
   const effFin = f => (f.status==='pendente' && f.vencimento && f.vencimento < today()) ? 'atrasado' : f.status;
   const FST = { pendente:'A pagar', pago:'Pago', atrasado:'Vencido' };
   const FASE = { levantamento:'Levantamento cadastral', estudo:'Estudo preliminar', anteprojeto:'Anteprojeto', basico:'Projeto básico', legal:'Projeto legal', executivo:'Projeto executivo', obra:'Acompanhamento / obra', entregue:'Entrega final' };
-  const FASE_ORDER = ['levantamento','estudo','anteprojeto','basico','legal','executivo','obra','entregue'];
-  const stepper = fase => {
-    const idx = Math.max(0, FASE_ORDER.indexOf(fase||'levantamento'));
-    return `<div class="stepper">${FASE_ORDER.map((f,i)=>`
-      <div class="step${i<idx?' done':''}${i===idx?' current':''}"><span class="dot"></span><span class="lbl">${FASE[f]}</span></div>`).join('')}</div>`;
+  const ETAPAS_ALL = ['levantamento','estudo','anteprojeto','basico','legal','executivo','obra','entregue'];
+  const parseEtapas = v => { try { const a = JSON.parse(v); return Array.isArray(a) && a.length ? a : ETAPAS_ALL.slice(); } catch { return ETAPAS_ALL.slice(); } };
+  const stepper = (fase, etapasRaw) => {
+    const order = parseEtapas(etapasRaw);
+    const idx = Math.max(0, order.indexOf(fase || order[0]));
+    return `<div class="stepper">${order.map((f,i)=>`
+      <div class="step${i<idx?' done':''}${i===idx?' current':''}"><span class="dot"></span><span class="lbl">${FASE[f]||f}</span></div>`).join('')}</div>`;
   };
 
   document.getElementById('logout').onclick = async () => {
@@ -202,10 +204,10 @@
             <span class="badge ${p.status||'proposta'}">${PST[p.status]||'—'}</span>
           </div>
           <div class="proj-body">
-            <div class="kv"><div class="k">Etapa atual</div><div class="v">${FASE[p.fase]||'Levantamento cadastral'}</div></div>
+            <div class="kv"><div class="k">Etapa atual</div><div class="v">${FASE[p.fase]||FASE[parseEtapas(p.etapas)[0]]||'—'}</div></div>
             <div class="kv"><div class="k">Início</div><div class="v">${p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):'—'}</div></div>
           </div>
-          ${stepper(p.fase)}
+          ${stepper(p.fase, p.etapas)}
           ${p.notas?`<div class="proj-meta" style="margin-top:14px">${esc(p.notas)}</div>`:''}
           ${(p.arquivos&&p.arquivos.length)?`
           <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">
