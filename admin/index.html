@@ -241,6 +241,10 @@
   .fmt-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0 0 16px; font-size: 12px; color: var(--muted); }
   .fmt-item { display: flex; align-items: center; gap: 6px; }
   .fmt-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .fmt-legend strong { font-weight: 700; }
+  .leg-sep { width: 1px; height: 13px; background: var(--line); display: inline-block; margin: 0 2px; }
+  .detail-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+  .detail-notes { white-space: pre-wrap; word-break: break-word; font-size: 14px; line-height: 1.5; background: #fbf8f6; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; max-height: 46vh; overflow: auto; }
 
   /* Lembretes */
   .lembrete .l-txt { font-size: 14px; }
@@ -1265,7 +1269,33 @@ function calItems() {
   return [...ev, ...po];
 }
 const calPill = it => `<div class="evt-pill" draggable="true" data-id="${it.id}" data-kind="${it.kind}" title="${esc(it.titulo)}" style="background:${it.color}1a;color:${it.color}"><span class="evt-dot" style="background:${it.color}"></span>${it.hora?`<span class="t">${it.hora}</span>`:''}${esc(it.titulo)}</div>`;
-const calOpen = (id, kind) => { if (kind === 'post') postForm(DB.get('posts', id)); else eventoForm(DB.get('eventos', id)); };
+const calOpen = (id, kind) => { if (kind === 'post') openPostDetail(DB.get('posts', id)); else openEventoDetail(DB.get('eventos', id)); };
+function calLegend() {
+  const ev = Object.entries(EVT_COR).map(([k,c]) => `<span class="fmt-item"><span class="fmt-dot" style="background:${c}"></span>${T.evtTipo[k]||k}</span>`).join('');
+  const po = Object.keys(T.formato).map(k => `<span class="fmt-item"><span class="fmt-dot" style="background:${FORMATO_COR[k]}"></span>${T.formato[k]}</span>`).join('');
+  return `<div class="fmt-legend"><strong style="color:var(--ink)">Eventos:</strong> ${ev}<span class="leg-sep"></span><strong style="color:var(--ink)">Conteúdo:</strong> ${po}</div>`;
+}
+function openEventoDetail(e) {
+  if (!e) return;
+  const proj = e.projetoId ? projName(e.projetoId) : '';
+  openModal('Evento', `
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px"><span class="evt-dot" style="width:11px;height:11px;background:${evtColor(e)}"></span><strong style="font-size:17px">${esc(e.titulo)}</strong></div>
+    <div class="sub" style="margin-bottom:14px">${fmtDateFull(e.data)}${e.hora?(' · '+e.hora):''} · ${T.evtTipo[e.tipo]||''}${proj?(' · '+esc(proj)):''}</div>
+    ${e.meet?`<div style="margin-bottom:14px"><a href="${esc(e.meet)}" target="_blank" rel="noopener" style="color:var(--bordeaux);font-weight:600;font-size:14px">🎥 Entrar na reunião</a></div>`:''}
+    ${e.notas?`<div class="detail-notes">${esc(e.notas)}</div>`:'<div class="sub">Sem notas.</div>'}
+  `, () => { eventoForm(e); return false; }, 'Editar');
+}
+function openPostDetail(p) {
+  if (!p) return;
+  openModal('Conteúdo', `
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px"><span class="evt-dot" style="width:11px;height:11px;background:${postColor(p)}"></span><strong style="font-size:17px">${esc(p.titulo)}</strong></div>
+    <div class="sub" style="margin-bottom:14px">${T.formato[p.formato]||''}${p.canal?(' · '+(T.canal[p.canal]||'')):''}${p.data?(' · '+fmtDateFull(p.data)):''} · ${T.postStatus[p.status]||''}</div>
+    ${p.legenda?`<div class="detail-lbl">Legenda</div><div class="detail-notes" style="margin-bottom:12px">${esc(p.legenda)}</div>`:''}
+    ${p.notas?`<div class="detail-lbl">Notas</div><div class="detail-notes">${esc(p.notas)}</div>`:''}
+    ${(p.alcance||p.curtidas)?`<div class="sub" style="margin-top:12px">${p.alcance?('Alcance '+Number(p.alcance).toLocaleString('pt-BR')):''}${p.curtidas?((p.alcance?' · ':'')+Number(p.curtidas).toLocaleString('pt-BR')+' curtidas'):''}</div>`:''}
+    ${(!p.legenda&&!p.notas)?'<div class="sub">Sem legenda ou notas.</div>':''}
+  `, () => { postForm(p); return false; }, 'Editar');
+}
 function wireCalItems(container, reRender) {
   container.querySelectorAll('.evt-pill[data-kind]').forEach(p => {
     p.onclick = () => calOpen(p.dataset.id, p.dataset.kind);
@@ -1345,6 +1375,7 @@ function renderCalMonth() {
   const main = $('#calMain');
   main.innerHTML = `
     <div class="cal-title">${monthName}</div>
+    ${calLegend()}
     <div class="cal">
       <div class="cal-head">${WEEK.map(w => `<div>${w}</div>`).join('')}</div>
       <div class="cal-grid">${cells.join('')}</div>
@@ -1370,7 +1401,7 @@ function renderCalWeek() {
     </div>`;
   }).join('');
   const main = $('#calMain');
-  main.innerHTML = `<div class="cal-title">${label}</div><div class="cal wk-grid">${cols}</div>`;
+  main.innerHTML = `<div class="cal-title">${label}</div>${calLegend()}<div class="cal wk-grid">${cols}</div>`;
   main.querySelectorAll('.wk-col[data-day]').forEach(c => c.onclick = e => { if (e.target.closest('.evt-pill')) return; eventoForm({ data: c.dataset.day }); });
   wireCalItems(main, renderCalendario);
 }
@@ -1694,7 +1725,7 @@ function renderPostCalendar(posts) {
   $('#pcNext').onclick = () => { postCal.m++; if (postCal.m > 11) { postCal.m = 0; postCal.y++; } renderMarketing(); };
   $('#pcToday').onclick = () => { const d = new Date(); postCal.y = d.getFullYear(); postCal.m = d.getMonth(); renderMarketing(); };
   root.querySelectorAll('.cal-cell[data-day]').forEach(c => c.onclick = e => { if (e.target.closest('.evt-pill')) return; postForm({ data: c.dataset.day, status: 'agendado' }); });
-  root.querySelectorAll('.evt-pill[data-id]').forEach(p => p.onclick = () => postForm(DB.get('posts', p.dataset.id)));
+  root.querySelectorAll('.evt-pill[data-id]').forEach(p => p.onclick = () => openPostDetail(DB.get('posts', p.dataset.id)));
   wireDayDrag(root, 'posts', '.evt-pill[data-id]', renderMarketing, rec => (rec.status === 'ideia' ? { status: 'agendado' } : {}));
 }
 function postForm(rec = {}) {
