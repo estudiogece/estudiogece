@@ -319,7 +319,7 @@ const TABLES = {
   eventos: { titulo: "titulo", data: "data", hora: "hora", tipo: "tipo", projetoId: "projeto_id", notas: "notas", meet: "meet", gcalId: "gcal_id" },
   leads: { nome: "nome", contato: "contato", origem: "origem", interesse: "interesse", status: "status", valor: "valor", notas: "notas" },
   arquivos: { nome: "nome", url: "url", projetoId: "projeto_id" },
-  posts: { data: "data", canal: "canal", titulo: "titulo", legenda: "legenda", status: "status", alcance: "alcance", curtidas: "curtidas", notas: "notas" },
+  posts: { data: "data", canal: "canal", formato: "formato", titulo: "titulo", legenda: "legenda", status: "status", alcance: "alcance", curtidas: "curtidas", notas: "notas" },
   campanhas: { nome: "nome", canal: "canal", objetivo: "objetivo", inicio: "inicio", fim: "fim", investimento: "investimento", leads: "leads", alcance: "alcance", status: "status", notas: "notas" },
   lembretes: { texto: "texto", feito: "feito" },
 };

@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS arquivos (
 -- Marketing: planejador de conteúdo (posts) e campanhas
 CREATE TABLE IF NOT EXISTS posts (
   id         TEXT PRIMARY KEY,
-  data       TEXT, canal TEXT, titulo TEXT NOT NULL, legenda TEXT,
+  data       TEXT, canal TEXT, formato TEXT, titulo TEXT NOT NULL, legenda TEXT,
   status     TEXT,      -- ideia|producao|agendado|publicado
   alcance    INTEGER, curtidas INTEGER, notas TEXT,
   created_at INTEGER NOT NULL

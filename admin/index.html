@@ -237,6 +237,10 @@
   .kb-chip { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 2px 7px; border-radius: 20px; background: #f3ebec; color: var(--bordeaux); }
   @media (max-width: 900px) { .kanban { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 560px) { .kanban { grid-template-columns: 1fr; } }
+  /* Legenda de formatos (cores) */
+  .fmt-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0 0 16px; font-size: 12px; color: var(--muted); }
+  .fmt-item { display: flex; align-items: center; gap: 6px; }
+  .fmt-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 
   /* Lembretes */
   .lembrete .l-txt { font-size: 14px; }
@@ -404,11 +408,14 @@ const T = {
   leadStatus:  { novo:'Novo', negociacao:'Em negociação', ganho:'Ganho', perdido:'Perdido' },
   evtTipo:     { reuniao:'Reunião', visita:'Visita técnica', entrega:'Entrega', obra:'Obra', outro:'Outro' },
   canal:       { instagram:'Instagram', facebook:'Facebook', tiktok:'TikTok', linkedin:'LinkedIn', youtube:'YouTube', site:'Site / Blog', googleads:'Google Ads', outro:'Outro' },
+  formato:     { story:'Story', carrossel:'Carrossel', reels:'Reels', post:'Post / Feed', tiktok:'TikTok', video:'Vídeo' },
   postStatus:  { ideia:'Ideia', producao:'Em produção', agendado:'Agendado', publicado:'Publicado' },
   campStatus:  { planejada:'Planejada', ativa:'Ativa', concluida:'Concluída' },
 };
 const options = (map, sel) => Object.entries(map).map(([v,l]) => `<option value="${v}"${v===sel?' selected':''}>${l}</option>`).join('');
 const badge = (cls, label) => `<span class="badge ${cls}">${label}</span>`;
+const FORMATO_COR = { story:'#e1306c', carrossel:'#3d6b8a', reels:'#833ab4', post:'#3f6b4f', tiktok:'#111111', video:'#c0392b', outro:'#8a7a7d' };
+const postColor = p => FORMATO_COR[p && p.formato] || '#8a7a7d';
 const ETAPAS_ALL = ['levantamento','estudo','anteprojeto','basico','legal','executivo','obra','entregue'];
 const parseEtapas = v => { try { const a = JSON.parse(v); return Array.isArray(a) && a.length ? a : ETAPAS_ALL.slice(); } catch { return ETAPAS_ALL.slice(); } };
 
@@ -1014,7 +1021,7 @@ function wireDayDrag(container, coll, pillSel, reRender, onDrop) {
 // Itens do calendário geral = eventos + posts de marketing (com data).
 function calItems() {
   const ev = DB.all('eventos').map(e => ({ id: e.id, kind: 'evento', data: e.data, titulo: e.titulo, hora: e.hora || '', color: evtColor(e), sub: T.evtTipo[e.tipo] || 'Evento' }));
-  const po = DB.all('posts').filter(p => p.data).map(p => ({ id: p.id, kind: 'post', data: p.data, titulo: p.titulo, hora: '', color: (typeof CANAL_COR !== 'undefined' && CANAL_COR[p.canal]) || '#8a7a7d', sub: (T.canal[p.canal] || 'Conteúdo') + ' · post' }));
+  const po = DB.all('posts').filter(p => p.data).map(p => ({ id: p.id, kind: 'post', data: p.data, titulo: p.titulo, hora: '', color: postColor(p), sub: (T.formato[p.formato] || 'Conteúdo') + (p.canal ? ' · ' + (T.canal[p.canal] || '') : '') }));
   return [...ev, ...po];
 }
 const calPill = it => `<div class="evt-pill" draggable="true" data-id="${it.id}" data-kind="${it.kind}" title="${esc(it.titulo)}" style="background:${it.color}1a;color:${it.color}"><span class="evt-dot" style="background:${it.color}"></span>${it.hora?`<span class="t">${it.hora}</span>`:''}${esc(it.titulo)}</div>`;
@@ -1369,6 +1376,7 @@ function renderConteudo() {
       </div>
       <span class="sub">${posts.length} ${posts.length===1?'ideia/post':'ideias e posts'} · arraste os cartões entre as colunas</span>
     </div>
+    <div class="fmt-legend">${Object.entries(T.formato).map(([k,l]) => `<span class="fmt-item"><span class="fmt-dot" style="background:${FORMATO_COR[k]}"></span>${l}</span>`).join('')}</div>
     <div id="conteudoView"></div>`;
   $('#cvQuadro').onclick = () => { conteudoView='quadro'; renderConteudo(); };
   $('#cvCal').onclick = () => { conteudoView='calendario'; renderConteudo(); };
@@ -1382,9 +1390,9 @@ function renderKanban(posts) {
       <h3>${label}<span>${list.length}</span></h3>
       ${s==='ideia' ? `<input class="kb-add" id="kbAdd" placeholder="+ Nova ideia…">` : ''}
       <div class="kb-cards">${list.map(p => `
-        <div class="kb-card" draggable="true" data-id="${p.id}" style="border-left:3px solid ${CANAL_COR[p.canal]||'#8a7a7d'}">
+        <div class="kb-card" draggable="true" data-id="${p.id}" style="border-left:3px solid ${postColor(p)}">
           <div class="t">${esc(p.titulo)}</div>
-          <div class="meta"><span class="kb-chip">${T.canal[p.canal]||'—'}</span>${p.data?`<span>${fmtDate(p.data)}</span>`:''}${(p.status==='publicado'&&p.alcance)?`<span>${Number(p.alcance).toLocaleString('pt-BR')} alcance</span>`:''}</div>
+          <div class="meta"><span class="kb-chip" style="background:${postColor(p)}1a;color:${postColor(p)}">${T.formato[p.formato]||'—'}</span><span>${T.canal[p.canal]||''}</span>${p.data?`<span>${fmtDate(p.data)}</span>`:''}${(p.status==='publicado'&&p.alcance)?`<span>${Number(p.alcance).toLocaleString('pt-BR')} alcance</span>`:''}</div>
         </div>`).join('')}</div>
     </div>`;
   }).join('');
@@ -1394,7 +1402,7 @@ function renderKanban(posts) {
   if (add) add.onkeydown = async e => {
     if (e.key === 'Enter' && add.value.trim()) {
       const titulo = add.value.trim(); add.disabled = true;
-      try { await DB.upsert('posts', { titulo, status: 'ideia', canal: 'instagram' }); renderMarketing(); }
+      try { await DB.upsert('posts', { titulo, status: 'ideia', canal: 'instagram', formato: 'post' }); renderMarketing(); }
       catch (err) { toast(err.message || 'Erro.'); add.disabled = false; }
     }
   };
@@ -1427,7 +1435,7 @@ function renderPostCalendar(posts) {
     const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const evs = byDay[iso] || [];
     const isToday = iso === todayISO();
-    const shown = evs.slice(0, 4).map(p => `<div class="evt-pill" draggable="true" data-id="${p.id}" title="${esc(p.titulo)}" style="background:${(CANAL_COR[p.canal]||'#8a7a7d')}1a;color:${CANAL_COR[p.canal]||'#8a7a7d'}"><span class="evt-dot" style="background:${CANAL_COR[p.canal]||'#8a7a7d'}"></span>${esc(p.titulo)}</div>`).join('');
+    const shown = evs.slice(0, 4).map(p => `<div class="evt-pill" draggable="true" data-id="${p.id}" title="${esc(p.titulo)}" style="background:${postColor(p)}1a;color:${postColor(p)}"><span class="evt-dot" style="background:${postColor(p)}"></span>${esc(p.titulo)}</div>`).join('');
     const more = evs.length > 4 ? `<div class="cal-more">+${evs.length - 4}</div>` : '';
     cells.push(`<div class="cal-cell${isToday?' today':''}" data-day="${iso}"><div class="day-num">${d}</div>${shown}${more}</div>`);
   }
@@ -1454,10 +1462,13 @@ function postForm(rec = {}) {
     <input type="hidden" name="id" value="${esc(rec.id||'')}">
     <div class="field"><label>Título / tema *</label><input name="titulo" required value="${esc(rec.titulo||'')}" placeholder="Ex.: Antes e depois — Escritório AT"></div>
     <div class="field-row">
+      <div class="field"><label>Formato</label><select name="formato">${options(T.formato, rec.formato||'post')}</select></div>
       <div class="field"><label>Canal</label><select name="canal">${options(T.canal, rec.canal||'instagram')}</select></div>
-      <div class="field"><label>Data</label><input name="data" type="date" value="${esc(rec.data||todayISO())}"></div>
     </div>
-    <div class="field"><label>Status</label><select name="status">${options(T.postStatus, rec.status||'ideia')}</select></div>
+    <div class="field-row">
+      <div class="field"><label>Data</label><input name="data" type="date" value="${esc(rec.data||todayISO())}"></div>
+      <div class="field"><label>Status</label><select name="status">${options(T.postStatus, rec.status||'ideia')}</select></div>
+    </div>
     <div class="field"><label>Legenda</label><textarea name="legenda" placeholder="Texto do post…">${esc(rec.legenda||'')}</textarea></div>
     <div class="field-row">
       <div class="field"><label>Alcance</label><input name="alcance" type="number" min="0" value="${rec.alcance??''}" placeholder="0"></div>
