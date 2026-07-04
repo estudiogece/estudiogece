@@ -295,7 +295,17 @@
   .pr-line .v { font-variant-numeric: tabular-nums; font-weight: 600; }
   .pr-line.big { font-size: 19px; font-weight: 800; color: var(--bordeaux); border-top: 2px solid var(--bordeaux); margin-top: 4px; padding-top: 12px; }
   .pr-line.big .v { font-weight: 800; }
-  @media (max-width: 900px) { .pr-wrap { grid-template-columns: 1fr; } .pr-summary { position: static; } }
+  @media (max-width: 1080px) { .pr-wrap { grid-template-columns: 1fr; } .pr-summary { position: static; } }
+  @media (max-width: 720px) {
+    .pr-sec { padding: 14px; }
+    .pr-row, .pr-item { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+    .pr-row.head, .pr-item.head { display: none; }
+    .pr-row [data-k=desc], .pr-item [data-k=nome] { flex: 1 1 100%; }
+    .pr-row [data-k=valor] { flex: 2 1 90px; }
+    .pr-row [data-k=qtd], .pr-item [data-k=horas] { flex: 1 1 60px; }
+    .pr-total { flex: 1 1 auto; }
+    .pr-x { flex: 0 0 auto; }
+  }
   .evt-pill[draggable="true"] { cursor: grab; }
   .evt-pill.dragging { opacity: .4; }
   .cal-cell.drag-over, .wk-col.drag-over { outline: 2px solid var(--bordeaux); outline-offset: -2px; background: #f1e6e8; }
