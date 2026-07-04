@@ -452,7 +452,7 @@ const T = {
   leadStatus:  { novo:'Novo', negociacao:'Em negociação', ganho:'Ganho', perdido:'Perdido' },
   evtTipo:     { reuniao:'Reunião', visita:'Visita técnica', entrega:'Entrega', obra:'Obra', outro:'Outro' },
   canal:       { instagram:'Instagram', facebook:'Facebook', tiktok:'TikTok', linkedin:'LinkedIn', youtube:'YouTube', site:'Site / Blog', googleads:'Google Ads', outro:'Outro' },
-  formato:     { story:'Story', carrossel:'Carrossel', reels:'Reels', post:'Post / Feed', tiktok:'TikTok', video:'Vídeo' },
+  formato:     { story:'Story', reels:'Reels', post:'Post / Feed' },
   postStatus:  { ideia:'Ideia', producao:'Em produção', agendado:'Agendado', publicado:'Publicado' },
   campStatus:  { planejada:'Planejada', ativa:'Ativa', concluida:'Concluída' },
 };
@@ -1733,8 +1733,8 @@ function postForm(rec = {}) {
     <input type="hidden" name="id" value="${esc(rec.id||'')}">
     <div class="field"><label>Título / tema *</label><input name="titulo" required value="${esc(rec.titulo||'')}" placeholder="Ex.: Antes e depois — Escritório AT"></div>
     <div class="field-row">
-      <div class="field"><label>Formato</label><select name="formato">${options(T.formato, rec.formato||'post')}</select></div>
       <div class="field"><label>Canal</label><select name="canal">${options(T.canal, rec.canal||'instagram')}</select></div>
+      <div class="field"><label>Formato</label><select name="formato">${options(T.formato, rec.formato||'post')}</select></div>
     </div>
     <div class="field-row">
       <div class="field"><label>Data</label><input name="data" type="date" value="${esc(rec.data||todayISO())}"></div>

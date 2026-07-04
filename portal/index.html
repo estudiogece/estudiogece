@@ -50,6 +50,8 @@
   .kv .v { font-size:14px; font-weight:500; }
   .list { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:8px 22px; }
   .li { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 0; border-bottom:1px solid var(--line); font-size:14px; }
+  .li-click { cursor:pointer; margin:0 -12px; padding:14px 12px; border-radius:8px; }
+  .li-click:hover { background:#faf7f6; }
   .li:last-child { border-bottom:none; }
   .li .meta { color:var(--muted); font-size:12.5px; }
   .empty { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:44px 24px; text-align:center; color:var(--muted); font-size:14px; }
@@ -233,8 +235,8 @@
 
     if (eventos.length) {
       html += `<h2>Próximos compromissos</h2><div class="list">` + eventos.map(e => `
-        <div class="li">
-          <div><div>${esc(e.titulo)}</div><div class="meta">${EVT[e.tipo]||''}${e.hora?(' · '+e.hora):''}</div></div>
+        <div class="li li-click" data-evt="${e.id}">
+          <div><div>${esc(e.titulo)}</div><div class="meta">${EVT[e.tipo]||''}${e.hora?(' · '+e.hora):''}${(e.notas||e.meet)?' · toque para ver':''}</div></div>
           <div style="display:flex;align-items:center;gap:14px">
             ${e.meet?`<a href="${esc(e.meet)}" target="_blank" rel="noopener" style="background:var(--bordeaux);color:#fff;text-decoration:none;font-weight:600;font-size:12.5px;padding:7px 12px;border-radius:8px;white-space:nowrap">🎥 Entrar na reunião</a>`:''}
             <span class="meta">${fmtDate(e.data)}</span>
@@ -263,7 +265,34 @@
     }
 
     document.getElementById('app').innerHTML = html;
+
+    document.querySelectorAll('[data-evt]').forEach(el => el.onclick = ev => {
+      if (ev.target.closest('a')) return;
+      const e = eventos.find(x => x.id === el.dataset.evt);
+      if (e) openEvtDetail(e);
+    });
   })();
+
+  function openEvtDetail(e) {
+    const root = document.getElementById('modalRoot');
+    const close = () => { root.innerHTML = ''; };
+    const dataFull = e.data ? new Date(e.data + 'T00:00:00').toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long', year:'numeric' }) : '';
+    root.innerHTML = `
+      <div class="overlay" id="evOv">
+        <div class="modal">
+          <div class="modal-head"><h3>${esc(e.titulo)}</h3><button type="button" class="x-btn" id="evClose">✕</button></div>
+          <div class="modal-body">
+            <div style="color:var(--muted);font-size:13.5px;margin-bottom:14px;text-transform:capitalize">${dataFull}${e.hora?(' · '+e.hora):''} · ${EVT[e.tipo]||''}</div>
+            ${e.meet?`<a href="${esc(e.meet)}" target="_blank" rel="noopener" style="display:inline-block;background:var(--bordeaux);color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:10px 16px;border-radius:8px;margin-bottom:16px">🎥 Entrar na reunião</a>`:''}
+            ${e.notas?`<div style="white-space:pre-wrap;font-size:14px;line-height:1.5;background:#faf7f6;border:1px solid var(--line);border-radius:8px;padding:12px 14px">${esc(e.notas)}</div>`:'<div style="color:var(--muted);font-size:13.5px">Sem observações.</div>'}
+          </div>
+          <div class="modal-body" style="padding-top:0"><div class="actions"><button type="button" class="btn ghost" id="evOk">Fechar</button></div></div>
+        </div>
+      </div>`;
+    document.getElementById('evClose').onclick = close;
+    document.getElementById('evOk').onclick = close;
+    document.getElementById('evOv').onclick = ev => { if (ev.target.id === 'evOv') close(); };
+  }
 </script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}</script>
 </body>
