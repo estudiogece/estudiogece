@@ -47,6 +47,8 @@ CREATE TABLE IF NOT EXISTS eventos (
   tipo       TEXT,
   projeto_id TEXT REFERENCES projetos(id) ON DELETE SET NULL,
   notas      TEXT,
+  meet       TEXT,      -- link do Google Meet (gerado via Calendar API)
+  gcal_id    TEXT,      -- id do evento no Google Calendar
   created_at INTEGER NOT NULL
 );
 

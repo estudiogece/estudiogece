@@ -493,6 +493,55 @@ const GDRIVE = {
   },
 };
 
+/* ---------- Google Calendar / Meet (reusa o clientId do Picker) ---------- */
+const GCAL = {
+  scope: 'https://www.googleapis.com/auth/calendar.events',
+  token: null, tokenClient: null, _res: null, _rej: null,
+  enabled() { return !!GDRIVE.clientId; },
+  ready() { return !!(window.google && google.accounts && google.accounts.oauth2); },
+  getToken() {
+    return new Promise((resolve, reject) => {
+      if (!this.ready()) return reject(new Error('Google ainda carregando.'));
+      if (!this.tokenClient) {
+        this.tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: GDRIVE.clientId, scope: this.scope,
+          callback: (r) => { if (r && r.access_token) { this.token = r.access_token; this._res && this._res(r.access_token); } else { this._rej && this._rej(new Error('Autorização negada.')); } },
+        });
+      }
+      this._res = resolve; this._rej = reject;
+      if (this.token) resolve(this.token);
+      else this.tokenClient.requestAccessToken({ prompt: '' });
+    });
+  },
+  async criarReuniao({ titulo, descricao, data, hora, emailCliente }) {
+    const token = await this.getToken();
+    const ini = hora || '09:00';
+    const [H, M] = ini.split(':').map(Number);
+    const fim = `${String((H + 1) % 24).padStart(2,'0')}:${String(M||0).padStart(2,'0')}`;
+    const body = {
+      summary: titulo,
+      description: descricao || '',
+      start: { dateTime: `${data}T${ini}:00`, timeZone: 'America/Maceio' },
+      end: { dateTime: `${data}T${fim}:00`, timeZone: 'America/Maceio' },
+      conferenceData: { createRequest: { requestId: 'gece-' + Date.now(), conferenceSolutionKey: { type: 'hangoutsMeet' } } },
+    };
+    if (emailCliente) body.attendees = [{ email: emailCliente }];
+    const url = 'https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1' + (emailCliente ? '&sendUpdates=all' : '');
+    const res = await fetch(url, { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error((d.error && d.error.message) || 'Falha no Google Calendar.');
+    const meet = d.hangoutLink || (d.conferenceData && d.conferenceData.entryPoints && d.conferenceData.entryPoints.find(e => e.entryPointType === 'video')?.uri) || '';
+    return { meet, gcalId: d.id || '' };
+  },
+};
+function clientEmailDoProjeto(projetoId) {
+  if (!projetoId) return '';
+  const p = DB.get('projetos', projetoId);
+  if (!p || !p.clientId) return '';
+  const c = DB.get('clientes', p.clientId);
+  return c ? c.email : '';
+}
+
 /* ---------- Modal de pagamentos / parcelas por projeto ---------- */
 function openPagamentosModal(projeto) {
   const root = $('#modalRoot');
@@ -1115,8 +1164,28 @@ function eventoForm(rec = {}) {
       <div class="field"><label>Projeto vinculado</label><select name="projetoId">${projOpts}</select></div>
     </div>
     <div class="field"><label>Notas</label><textarea name="notas" placeholder="Local, participantes, pauta…">${esc(rec.notas||'')}</textarea></div>
-    ${rec.id?`<button type="button" class="btn subtle sm" id="evtDel" style="color:var(--danger)">Excluir evento</button>`:''}
-  `, async fd => { await DB.upsert('eventos', { ...rec, ...fd }); renderCalendario(); toast(rec.id?'Evento atualizado.':'Evento criado.'); });
+    ${rec.meet?`<div class="field" style="margin-bottom:8px"><label>Reunião online</label><a href="${esc(rec.meet)}" target="_blank" rel="noopener" style="color:var(--bordeaux);font-weight:600;font-size:13.5px">🎥 Abrir link do Google Meet</a></div>`:''}
+    ${GCAL.enabled()?`<label class="chk" style="margin:4px 0 6px"><input type="checkbox" name="genMeet"${!rec.meet?' checked':''}> Criar reunião no Google Meet e convidar o cliente por e-mail</label>`:''}
+    ${rec.id?`<div style="margin-top:8px"><button type="button" class="btn subtle sm" id="evtDel" style="color:var(--danger)">Excluir evento</button></div>`:''}
+  `, async fd => {
+    let extra = {};
+    if (fd.genMeet) {
+      const email = clientEmailDoProjeto(fd.projetoId);
+      try {
+        const r = await GCAL.criarReuniao({ titulo: fd.titulo, descricao: fd.notas, data: fd.data, hora: fd.hora, emailCliente: email });
+        extra = { meet: r.meet, gcalId: r.gcalId };
+        toast(email ? 'Meet criado e convite enviado ao cliente.' : 'Meet criado. (sem cliente vinculado ao projeto para convidar)');
+      } catch (e) {
+        await DB.upsert('eventos', { ...rec, ...fd });
+        renderCalendario();
+        toast('Evento salvo, mas o Meet falhou: ' + (e.message || 'erro'));
+        return;
+      }
+    }
+    await DB.upsert('eventos', { ...rec, ...fd, ...extra });
+    renderCalendario();
+    if (!extra.meet) toast(rec.id ? 'Evento atualizado.' : 'Evento criado.');
+  });
   const del = $('#evtDel');
   if (del) del.onclick = async () => { await DB.remove('eventos', rec.id); $('#modalRoot').innerHTML=''; renderCalendario(); toast('Evento removido.'); };
 }

@@ -235,7 +235,10 @@
       html += `<h2>Próximos compromissos</h2><div class="list">` + eventos.map(e => `
         <div class="li">
           <div><div>${esc(e.titulo)}</div><div class="meta">${EVT[e.tipo]||''}${e.hora?(' · '+e.hora):''}</div></div>
-          <div class="meta">${fmtDate(e.data)}</div>
+          <div style="display:flex;align-items:center;gap:14px">
+            ${e.meet?`<a href="${esc(e.meet)}" target="_blank" rel="noopener" style="background:var(--bordeaux);color:#fff;text-decoration:none;font-weight:600;font-size:12.5px;padding:7px 12px;border-radius:8px;white-space:nowrap">🎥 Entrar na reunião</a>`:''}
+            <span class="meta">${fmtDate(e.data)}</span>
+          </div>
         </div>`).join('') + `</div>`;
     }
 
