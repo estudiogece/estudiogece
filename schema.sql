@@ -89,6 +89,13 @@ CREATE TABLE IF NOT EXISTS campanhas (
   created_at   INTEGER NOT NULL
 );
 
+-- Configurações do estúdio (ex.: chave 'precificacao' = JSON do modelo de preços)
+CREATE TABLE IF NOT EXISTS config (
+  chave      TEXT PRIMARY KEY,
+  valor      TEXT,
+  updated_at INTEGER
+);
+
 CREATE INDEX IF NOT EXISTS idx_arquivos_projeto ON arquivos(projeto_id);
 CREATE INDEX IF NOT EXISTS idx_projetos_client ON projetos(client_id);
 CREATE INDEX IF NOT EXISTS idx_financeiro_projeto ON financeiro(projeto_id);

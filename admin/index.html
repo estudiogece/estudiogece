@@ -266,6 +266,36 @@
   .drive-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
   .drive-dot.on { background: var(--ok); }
   .drive-dot.off { background: #d6cacc; }
+
+  /* Precificação */
+  .pr-wrap { display: grid; grid-template-columns: minmax(0,1fr) 340px; gap: 22px; align-items: start; }
+  .pr-main { min-width: 0; }
+  .pr-sec { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 16px; }
+  .pr-sec h3 { font-size: 14px; font-weight: 700; margin-bottom: 14px; }
+  .pr-row, .pr-item { display: grid; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .pr-row { grid-template-columns: minmax(0,1fr) 110px 62px 100px 24px; }
+  .pr-item { grid-template-columns: minmax(0,1fr) 80px 100px 24px; }
+  .pr-row.head, .pr-item.head { font-size: 10.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+  .pr-row input, .pr-item input { width: 100%; font-family: inherit; font-size: 13px; padding: 8px 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); }
+  .pr-row input:disabled, .pr-item input:disabled { background: #f7f2f0; color: var(--ink); font-weight: 600; }
+  .pr-total { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 13px; }
+  .pr-x { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; }
+  .pr-x:hover { color: var(--danger); }
+  .pr-add { background: none; border: none; color: var(--bordeaux); cursor: pointer; font-weight: 600; font-size: 12.5px; padding: 6px 0; }
+  .pr-sub { text-align: right; font-weight: 700; font-size: 13.5px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .et-group { margin-bottom: 16px; }
+  .et-title { font-weight: 700; font-size: 13px; margin: 6px 0 10px; color: var(--bordeaux); }
+  .pr-config { display: flex; flex-wrap: wrap; gap: 14px; }
+  .pr-config .field { margin: 0; flex: 1 1 120px; }
+  .pr-config .field input { width: 100%; font-family: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--line); border-radius: var(--radius); }
+  .pr-config .field input:disabled { background: #f7f2f0; font-weight: 700; color: var(--bordeaux); }
+  .pr-summary { background: #fbf8f6; border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; position: sticky; top: 20px; }
+  .pr-line { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .pr-line:last-of-type { border-bottom: none; }
+  .pr-line .v { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .pr-line.big { font-size: 19px; font-weight: 800; color: var(--bordeaux); border-top: 2px solid var(--bordeaux); margin-top: 4px; padding-top: 12px; }
+  .pr-line.big .v { font-weight: 800; }
+  @media (max-width: 900px) { .pr-wrap { grid-template-columns: 1fr; } .pr-summary { position: static; } }
   .evt-pill[draggable="true"] { cursor: grab; }
   .evt-pill.dragging { opacity: .4; }
   .cal-cell.drag-over, .wk-col.drag-over { outline: 2px solid var(--bordeaux); outline-offset: -2px; background: #f1e6e8; }
@@ -927,9 +957,21 @@ function projetoForm(rec = {}) {
 
 /* ---------- Financeiro ---------- */
 let finFilter = { tipo: '', status: '' };
+let finTab = 'lancamentos';
 function renderFinanceiro() {
   $('#pageTitle').textContent = 'Financeiro';
-  setActions(`<button class="btn" id="novoLanc">+ Novo lançamento</button>`);
+  setActions(`
+    <div class="seg">
+      <button class="seg-btn${finTab==='lancamentos'?' active':''}" id="ftLanc">Lançamentos</button>
+      <button class="seg-btn${finTab==='preco'?' active':''}" id="ftPreco">Precificação</button>
+    </div>
+    ${finTab==='lancamentos'?`<button class="btn" id="novoLanc">+ Novo lançamento</button>`:`<button class="btn" id="salvarPreco">Salvar precificação</button>`}`);
+  $('#ftLanc').onclick = () => { finTab='lancamentos'; renderFinanceiro(); };
+  $('#ftPreco').onclick = () => { finTab='preco'; renderFinanceiro(); };
+  if (finTab === 'preco') { renderPrecificacao(); return; }
+  renderLancamentos();
+}
+function renderLancamentos() {
   $('#novoLanc').onclick = () => finForm();
 
   const all = DB.all('financeiro');
@@ -976,6 +1018,194 @@ function renderFinanceiro() {
   view().querySelectorAll('[data-pay]').forEach(b => b.onclick = async () => { await DB.upsert('financeiro', { ...DB.get('financeiro', b.dataset.pay), status:'pago' }); renderFinanceiro(); toast('Lançamento quitado.'); });
   view().querySelectorAll('[data-edit]').forEach(b => b.onclick = () => finForm(DB.get('financeiro', b.dataset.edit)));
   view().querySelectorAll('[data-del]').forEach(b => b.onclick = () => { const f = DB.get('financeiro', b.dataset.del); confirmDelete(f.descricao, async () => { await DB.remove('financeiro', f.id); renderFinanceiro(); toast('Lançamento removido.'); }); });
+}
+/* ---------- Precificação (custo + hora + margem) ---------- */
+let precoModel = null;
+function precoDefault() {
+  const fx = ['Aluguel','Condomínio','Energia','Água','Internet','Telefone','Software','Assinaturas','Contabilidade','Taxas (TLF)','Folha de pagamento','Pró-labore','Marketing','Dívidas / empréstimo','Conselho de arquitetura','Taxa de limpeza','Manutenção de máquina','Outros'].map(d => ({ desc: d, valor: '', qtd: '1' }));
+  const vr = ['Transporte','Impressões e plotagens','Renderização','Papelaria','Brinde','Kit vizinhos','Registro fotográfico','Material para redes sociais','Consultoria de engenharia','Assessoria em regularização','RRT'].map(d => ({ desc: d, valor: '', qtd: '1' }));
+  const et = [
+    ['Estudo Preliminar', ['Levantamento cadastral','Programa de necessidades','Estudo de viabilidade','Croquis iniciais']],
+    ['Anteprojeto', ['Planta baixa','Layout preliminar','Estudo 3D inicial']],
+    ['Projeto Básico', ['Plantas de layout','Cortes e fachadas','Planta de localização']],
+    ['Projeto Legal', ['Planta de situação','Quadros gerais de áreas','Memorial descritivo']],
+    ['Projeto Executivo', ['Planta baixa de construir e demolir','Planta baixa de layout','Planta baixa de layout elétrico','Planta baixa de layout luminotécnico','Planta baixa de layout hidrossanitário','Paginação de revestimentos e pintura','Detalhamento de marcenaria','Detalhamento de serralheria','Detalhamento de esquadrias','Especificação técnica de materiais','Estudo volumétrico 3D finalizado']],
+  ].map(([nome, itens]) => ({ nome, itens: itens.map(n => ({ nome: n, horas: '' })) }));
+  return { fixos: fx, variaveis: vr, etapas: et, horasSemana: '40', semanas: '4', margemPct: '20', comissaoPct: '10', comissaoAplica: false, impostoPct: '15.5', naoRepassado: '' };
+}
+function precoNormaliza(m) {
+  const d = precoDefault();
+  m = Object.assign({}, d, m || {});
+  if (!Array.isArray(m.fixos) || !m.fixos.length) m.fixos = d.fixos;
+  if (!Array.isArray(m.variaveis) || !m.variaveis.length) m.variaveis = d.variaveis;
+  if (!Array.isArray(m.etapas) || !m.etapas.length) m.etapas = d.etapas;
+  return m;
+}
+function precoHTML() {
+  const m = precoModel;
+  const custoRows = (arr, group) => arr.map(i => `
+    <div class="pr-row" data-group="${group}">
+      <input data-k="desc" value="${esc(i.desc||'')}" placeholder="Descrição">
+      <input data-k="valor" type="number" step="0.01" min="0" value="${i.valor??''}" placeholder="0,00">
+      <input data-k="qtd" type="number" step="1" min="0" value="${i.qtd??''}" placeholder="1">
+      <span class="pr-total">—</span>
+      <button type="button" class="pr-x" title="Remover">✕</button>
+    </div>`).join('');
+  const etapasHTML = m.etapas.map(e => `
+    <div class="et-group" data-nome="${esc(e.nome)}">
+      <div class="et-title">${esc(e.nome)}</div>
+      <div class="pr-item head"><span>Entregável</span><span>Horas</span><span style="text-align:right">Custo</span><span></span></div>
+      ${e.itens.map(it => `
+        <div class="pr-item et-item">
+          <input data-k="nome" value="${esc(it.nome||'')}" placeholder="Entregável">
+          <input data-k="horas" type="number" step="0.5" min="0" value="${it.horas??''}" placeholder="0">
+          <span class="pr-total">—</span>
+          <button type="button" class="pr-x" title="Remover">✕</button>
+        </div>`).join('')}
+      <button type="button" class="pr-add" data-add-item="${esc(e.nome)}">+ entregável</button>
+      <div class="pr-sub">Subtotal: <span class="et-sub">—</span></div>
+    </div>`).join('');
+  return `
+    <div class="pr-wrap">
+      <div class="pr-main">
+        <div class="pr-sec">
+          <h3>1. Custos fixos mensais</h3>
+          <div class="pr-row head"><span>Descrição</span><span>Valor (R$)</span><span>Qtd</span><span style="text-align:right">Total</span><span></span></div>
+          <div id="fx-rows">${custoRows(m.fixos,'fixos')}</div>
+          <button type="button" class="pr-add" data-add-fixo>+ item</button>
+          <div class="pr-sub">Custo fixo total: <span id="s-custoFixo">—</span></div>
+        </div>
+        <div class="pr-sec">
+          <h3>2. Valor / hora</h3>
+          <div class="pr-config">
+            <div class="field"><label>Horas / semana</label><input id="horasSemana" type="number" min="0" value="${m.horasSemana??''}"></div>
+            <div class="field"><label>Semanas / mês</label><input id="semanas" type="number" min="0" step="0.1" value="${m.semanas??''}"></div>
+            <div class="field"><label>Capacidade (h/mês)</label><input id="s-capacidade" disabled></div>
+            <div class="field"><label>Valor / hora</label><input id="s-valorHora" disabled></div>
+          </div>
+          <div class="panel-sub" style="margin-top:8px">Valor/hora = custo fixo total ÷ capacidade de horas faturáveis.</div>
+        </div>
+        <div class="pr-sec">
+          <h3>3. Horas por entregável</h3>
+          <div id="etapas">${etapasHTML}</div>
+          <div class="pr-sub">Custo de horas: <span id="s-custoHoras">—</span> <span class="sub" id="s-totalHoras"></span></div>
+        </div>
+        <div class="pr-sec">
+          <h3>4. Custos variáveis do projeto</h3>
+          <div class="pr-row head"><span>Descrição</span><span>Valor (R$)</span><span>Qtd</span><span style="text-align:right">Total</span><span></span></div>
+          <div id="var-rows">${custoRows(m.variaveis,'variaveis')}</div>
+          <button type="button" class="pr-add" data-add-var>+ item</button>
+          <div class="pr-sub">Custo variável total: <span id="s-custoVar">—</span></div>
+        </div>
+      </div>
+      <aside class="pr-side">
+        <div class="pr-summary">
+          <h3 style="margin-bottom:14px">5. Precificação final</h3>
+          <div class="pr-config" style="margin-bottom:12px">
+            <div class="field"><label>Margem %</label><input id="margemPct" type="number" step="0.1" value="${m.margemPct??''}"></div>
+            <div class="field"><label>Comissão %</label><input id="comissaoPct" type="number" step="0.1" value="${m.comissaoPct??''}"></div>
+            <div class="field"><label>Imposto/NF %</label><input id="impostoPct" type="number" step="0.1" value="${m.impostoPct??''}"></div>
+          </div>
+          <label class="chk" style="margin-bottom:14px"><input type="checkbox" id="comissaoAplica"${m.comissaoAplica?' checked':''}> Há indicação/corretor (aplicar comissão)</label>
+          <div class="pr-line"><span>Custo total</span><span class="v" id="s-custoTotal">—</span></div>
+          <div class="pr-line"><span>Margem de lucro</span><span class="v" id="s-margem">—</span></div>
+          <div class="pr-line"><span>Comissão</span><span class="v" id="s-comissao">—</span></div>
+          <div class="pr-line"><span>Nota fiscal / impostos</span><span class="v" id="s-imposto">—</span></div>
+          <div class="pr-line big"><span>Preço final</span><span class="v" id="s-precoFinal">—</span></div>
+          <div class="field" style="margin:14px 0 6px"><label>Custos não repassados ao cliente (R$)</label><input id="naoRepassado" type="number" step="0.01" min="0" value="${m.naoRepassado??''}"></div>
+          <div class="pr-line"><span>Lucro líquido</span><span class="v" id="s-lucro">—</span></div>
+          <div class="sub" style="margin-top:8px">Líquido = margem − custos não repassados.</div>
+        </div>
+      </aside>
+    </div>`;
+}
+function precoReadModel() {
+  const rows = s => [...document.querySelectorAll(s)];
+  const g = (r, k) => r.querySelector(`[data-k=${k}]`).value;
+  precoModel.fixos = rows('#fx-rows .pr-row').map(r => ({ desc: g(r,'desc'), valor: g(r,'valor'), qtd: g(r,'qtd') }));
+  precoModel.variaveis = rows('#var-rows .pr-row').map(r => ({ desc: g(r,'desc'), valor: g(r,'valor'), qtd: g(r,'qtd') }));
+  precoModel.etapas = rows('#etapas .et-group').map(gr => ({ nome: gr.dataset.nome, itens: [...gr.querySelectorAll('.et-item')].map(it => ({ nome: g(it,'nome'), horas: g(it,'horas') })) }));
+  precoModel.horasSemana = $('#horasSemana').value; precoModel.semanas = $('#semanas').value;
+  precoModel.margemPct = $('#margemPct').value; precoModel.comissaoPct = $('#comissaoPct').value; precoModel.impostoPct = $('#impostoPct').value;
+  precoModel.naoRepassado = $('#naoRepassado').value; precoModel.comissaoAplica = $('#comissaoAplica').checked;
+}
+function precoRecalc() {
+  const n = (v, d=0) => { const x = parseFloat(String(v==null?'':v).replace(',','.')); return isFinite(x) ? x : d; };
+  let custoFixo = 0;
+  document.querySelectorAll('#fx-rows .pr-row').forEach(r => {
+    const t = n(r.querySelector('[data-k=valor]').value) * n(r.querySelector('[data-k=qtd]').value, 1);
+    r.querySelector('.pr-total').textContent = fmtMoney(t); custoFixo += t;
+  });
+  $('#s-custoFixo').textContent = fmtMoney(custoFixo);
+  const capacidade = n($('#horasSemana').value) * n($('#semanas').value);
+  const valorHora = capacidade > 0 ? custoFixo / capacidade : 0;
+  $('#s-capacidade').value = capacidade ? capacidade.toLocaleString('pt-BR') : '0';
+  $('#s-valorHora').value = fmtMoney(valorHora);
+  let custoHoras = 0, totalHoras = 0;
+  document.querySelectorAll('#etapas .et-group').forEach(gr => {
+    let sub = 0;
+    gr.querySelectorAll('.et-item').forEach(it => {
+      const h = n(it.querySelector('[data-k=horas]').value); const c = h * valorHora;
+      it.querySelector('.pr-total').textContent = fmtMoney(c); sub += c; totalHoras += h;
+    });
+    gr.querySelector('.et-sub').textContent = fmtMoney(sub); custoHoras += sub;
+  });
+  $('#s-custoHoras').textContent = fmtMoney(custoHoras);
+  $('#s-totalHoras').textContent = totalHoras ? ('· ' + totalHoras.toLocaleString('pt-BR') + ' h') : '';
+  let custoVar = 0;
+  document.querySelectorAll('#var-rows .pr-row').forEach(r => {
+    const t = n(r.querySelector('[data-k=valor]').value) * n(r.querySelector('[data-k=qtd]').value, 1);
+    r.querySelector('.pr-total').textContent = fmtMoney(t); custoVar += t;
+  });
+  $('#s-custoVar').textContent = fmtMoney(custoVar);
+  const custoTotal = custoHoras + custoVar;
+  const margem = custoTotal * n($('#margemPct').value) / 100;
+  const comissao = $('#comissaoAplica').checked ? custoTotal * n($('#comissaoPct').value) / 100 : 0;
+  const imposto = (custoTotal + margem + comissao) * n($('#impostoPct').value) / 100;
+  const precoFinal = custoTotal + margem + comissao + imposto;
+  const lucro = margem - n($('#naoRepassado').value);
+  $('#s-custoTotal').textContent = fmtMoney(custoTotal);
+  $('#s-margem').textContent = fmtMoney(margem);
+  $('#s-comissao').textContent = fmtMoney(comissao);
+  $('#s-imposto').textContent = fmtMoney(imposto);
+  $('#s-precoFinal').textContent = fmtMoney(precoFinal);
+  $('#s-lucro').textContent = fmtMoney(lucro);
+}
+async function precoSave() {
+  precoReadModel();
+  try { await api('PUT', '/admin/config/precificacao', { valor: JSON.stringify(precoModel) }); toast('Precificação salva.'); }
+  catch (e) { toast(e.message || 'Erro ao salvar.'); }
+}
+async function renderPrecificacao() {
+  view().innerHTML = '<div class="empty" style="padding:40px">Carregando…</div>';
+  if (!precoModel) {
+    try { const r = await api('GET', '/admin/config/precificacao'); precoModel = precoNormaliza(r.valor ? JSON.parse(r.valor) : null); }
+    catch { precoModel = precoDefault(); }
+  }
+  view().innerHTML = precoHTML();
+  const sv = $('#salvarPreco'); if (sv) sv.onclick = precoSave;
+  const v = view();
+  v.oninput = precoRecalc; v.onchange = precoRecalc;
+  v.onclick = e => {
+    const x = e.target.closest('.pr-x');
+    if (x) {
+      precoReadModel();
+      const row = x.closest('.et-item, .pr-row');
+      if (row.classList.contains('et-item')) {
+        const grp = row.closest('.et-group'); const idx = [...grp.querySelectorAll('.et-item')].indexOf(row);
+        const et = precoModel.etapas.find(e2 => e2.nome === grp.dataset.nome); if (et) et.itens.splice(idx, 1);
+      } else {
+        const idx = [...row.parentElement.querySelectorAll('.pr-row')].indexOf(row);
+        precoModel[row.dataset.group].splice(idx, 1);
+      }
+      renderPrecificacao(); return;
+    }
+    if (e.target.closest('[data-add-fixo]')) { precoReadModel(); precoModel.fixos.push({ desc:'', valor:'', qtd:'1' }); renderPrecificacao(); return; }
+    if (e.target.closest('[data-add-var]')) { precoReadModel(); precoModel.variaveis.push({ desc:'', valor:'', qtd:'1' }); renderPrecificacao(); return; }
+    const ai = e.target.closest('[data-add-item]');
+    if (ai) { precoReadModel(); const et = precoModel.etapas.find(e2 => e2.nome === ai.dataset.addItem); if (et) et.itens.push({ nome:'', horas:'' }); renderPrecificacao(); return; }
+  };
+  precoRecalc();
 }
 function finForm(rec = {}) {
   const projOpts = `<option value="">— Nenhum —</option>` + DB.all('projetos').map(p => `<option value="${p.id}"${p.id===rec.projetoId?' selected':''}>${esc(p.nome)}</option>`).join('');

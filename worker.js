@@ -551,6 +551,19 @@ async function handleApiData(request, env, url) {
   if (parts[1] === "admin") {
     if (!session || session.role !== "admin") return json({ ok: false, error: "Acesso restrito." }, 403);
     if (parts[2] === "data") return handleAdminData(env);
+    if (parts[2] === "config") {
+      const chave = parts[3];
+      if (request.method === "GET") {
+        const row = await env.DB.prepare("SELECT valor FROM config WHERE chave=?").bind(chave).first();
+        return json({ ok: true, valor: row ? row.valor : null });
+      }
+      if (request.method === "PUT") {
+        const b = await readBody(request);
+        await env.DB.prepare("INSERT INTO config (chave,valor,updated_at) VALUES (?,?,?) ON CONFLICT(chave) DO UPDATE SET valor=excluded.valor, updated_at=excluded.updated_at").bind(chave, String(b.valor || ""), Date.now()).run();
+        return json({ ok: true });
+      }
+      return json({ ok: false, error: "Método não permitido." }, 405);
+    }
     if (parts[2] === "clientes") {
       const cid = parts[3];
       if (request.method === "POST" && !cid) return handleClienteCreate(env, await readBody(request));
