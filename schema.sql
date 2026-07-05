@@ -43,7 +43,8 @@ CREATE TABLE IF NOT EXISTS eventos (
   id         TEXT PRIMARY KEY,
   titulo     TEXT NOT NULL,
   data       TEXT,
-  hora       TEXT,
+  hora       TEXT,      -- horário de início
+  hora_fim   TEXT,      -- horário de término (opcional, para duração)
   tipo       TEXT,
   projeto_id TEXT REFERENCES projetos(id) ON DELETE SET NULL,
   notas      TEXT,

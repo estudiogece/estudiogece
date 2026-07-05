@@ -333,8 +333,11 @@
   .ag-evt .t { font-weight: 600; font-size: 13px; line-height: 1.25; }
   .ag-evt .m { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
   @media (max-width: 900px) {
-    .cal-layout { grid-template-columns: 1fr; }
-    .cal-agenda { position: static; max-height: none; order: -1; }
+    /* Empilha em coluna única: calendário em destaque no topo, agenda compacta abaixo. */
+    .cal-layout { grid-template-columns: 1fr; gap: 16px; }
+    .cal-main { order: 0; }
+    .cal-agenda { position: static; order: 1; max-height: 42vh; padding: 14px 16px; }
+    .cal-agenda h3 { margin-bottom: 12px; }
   }
 
   /* Alternador Mês/Semana */
@@ -360,6 +363,11 @@
     .wk-col { min-height: auto; border-right: none; border-bottom: 1px solid var(--line); display: flex; align-items: stretch; }
     .wk-head { border-bottom: none; border-right: 1px solid var(--line); min-width: 72px; display: flex; flex-direction: column; justify-content: center; }
     .wk-body { flex: 1; }
+    /* Mês: células mais baixas e texto menor p/ caber as 7 colunas no celular. */
+    .cal-cell { min-height: 68px; padding: 5px 4px; }
+    .cal-cell .day-num { font-size: 11.5px; margin-bottom: 3px; }
+    .cal-cell .evt-pill { font-size: 9.5px; padding: 2px 4px; }
+    .cal-cell .evt-dot { margin-right: 3px; }
   }
 
   .toast {
@@ -435,6 +443,8 @@ const maskMoney = v => hideValues ? 'R$ ••••••' : fmtMoney(v);
 const todayISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
 const fmtDate = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : '—';
 const fmtDateFull = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : '—';
+// Faixa de horário do evento: "09:00–10:30" quando há fim, senão só o início.
+const evtHora = e => e && e.hora ? (e.horaFim ? `${e.hora}–${e.horaFim}` : e.hora) : '';
 
 function toast(msg) {
   const t = $('#toast');
@@ -564,11 +574,12 @@ const GCAL = {
       else this.tokenClient.requestAccessToken({ prompt: '' });
     });
   },
-  async criarReuniao({ titulo, descricao, data, hora, emailCliente }) {
+  async criarReuniao({ titulo, descricao, data, hora, horaFim, emailCliente }) {
     const token = await this.getToken();
     const ini = hora || '09:00';
     const [H, M] = ini.split(':').map(Number);
-    const fim = `${String((H + 1) % 24).padStart(2,'0')}:${String(M||0).padStart(2,'0')}`;
+    // Usa o horário de fim informado; senão assume 1h de duração.
+    const fim = horaFim || `${String((H + 1) % 24).padStart(2,'0')}:${String(M||0).padStart(2,'0')}`;
     const body = {
       summary: titulo,
       description: descricao || '',
@@ -840,7 +851,7 @@ function renderDashboard() {
         <div class="panel-sub">Agenda a partir de hoje</div>
         ${proximos.length ? proximos.map(e => `
           <div class="row-item">
-            <div><div class="name">${esc(e.titulo)}</div><div class="meta">${T.evtTipo[e.tipo]||''}${e.hora?(' · '+e.hora):''}</div></div>
+            <div><div class="name">${esc(e.titulo)}</div><div class="meta">${T.evtTipo[e.tipo]||''}${evtHora(e)?(' · '+evtHora(e)):''}</div></div>
             <div class="meta">${fmtDate(e.data)}</div>
           </div>`).join('') : `<div class="empty">Sem eventos na agenda.</div>`}
       </div>
@@ -1264,8 +1275,8 @@ function wireDayDrag(container, coll, pillSel, reRender, onDrop) {
 }
 // Itens do calendário geral = eventos + posts de marketing (com data).
 function calItems() {
-  const ev = DB.all('eventos').map(e => ({ id: e.id, kind: 'evento', data: e.data, titulo: e.titulo, hora: e.hora || '', color: evtColor(e), sub: T.evtTipo[e.tipo] || 'Evento' }));
-  const po = DB.all('posts').filter(p => p.data).map(p => ({ id: p.id, kind: 'post', data: p.data, titulo: p.titulo, hora: '', color: postColor(p), sub: (T.formato[p.formato] || 'Conteúdo') + (p.canal ? ' · ' + (T.canal[p.canal] || '') : '') }));
+  const ev = DB.all('eventos').map(e => ({ id: e.id, kind: 'evento', data: e.data, titulo: e.titulo, hora: e.hora || '', horaFim: e.horaFim || '', color: evtColor(e), sub: T.evtTipo[e.tipo] || 'Evento' }));
+  const po = DB.all('posts').filter(p => p.data).map(p => ({ id: p.id, kind: 'post', data: p.data, titulo: p.titulo, hora: '', horaFim: '', color: postColor(p), sub: (T.formato[p.formato] || 'Conteúdo') + (p.canal ? ' · ' + (T.canal[p.canal] || '') : '') }));
   return [...ev, ...po];
 }
 const calPill = it => `<div class="evt-pill" draggable="true" data-id="${it.id}" data-kind="${it.kind}" title="${esc(it.titulo)}" style="background:${it.color}1a;color:${it.color}"><span class="evt-dot" style="background:${it.color}"></span>${it.hora?`<span class="t">${it.hora}</span>`:''}${esc(it.titulo)}</div>`;
@@ -1280,7 +1291,7 @@ function openEventoDetail(e) {
   const proj = e.projetoId ? projName(e.projetoId) : '';
   openModal('Evento', `
     <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px"><span class="evt-dot" style="width:11px;height:11px;background:${evtColor(e)}"></span><strong style="font-size:17px">${esc(e.titulo)}</strong></div>
-    <div class="sub" style="margin-bottom:14px">${fmtDateFull(e.data)}${e.hora?(' · '+e.hora):''} · ${T.evtTipo[e.tipo]||''}${proj?(' · '+esc(proj)):''}</div>
+    <div class="sub" style="margin-bottom:14px">${fmtDateFull(e.data)}${evtHora(e)?(' · '+evtHora(e)):''} · ${T.evtTipo[e.tipo]||''}${proj?(' · '+esc(proj)):''}</div>
     ${e.meet?`<div style="margin-bottom:14px"><a href="${esc(e.meet)}" target="_blank" rel="noopener" style="color:var(--bordeaux);font-weight:600;font-size:14px">🎥 Entrar na reunião</a></div>`:''}
     ${e.notas?`<div class="detail-notes">${esc(e.notas)}</div>`:'<div class="sub">Sem notas.</div>'}
   `, () => { eventoForm(e); return false; }, 'Editar');
@@ -1422,7 +1433,7 @@ function renderAgenda() {
       <div class="ag-list">${byDay[iso].map(it => `
         <div class="ag-evt" data-id="${it.id}" data-kind="${it.kind}">
           <span class="ag-bar" style="background:${it.color}"></span>
-          <div><div class="t">${esc(it.titulo)}</div><div class="m">${it.hora?it.hora+' · ':''}${esc(it.sub)}</div></div>
+          <div><div class="t">${esc(it.titulo)}</div><div class="m">${evtHora(it)?evtHora(it)+' · ':''}${esc(it.sub)}</div></div>
         </div>`).join('')}</div>
     </div>`;
   }).join('') : `<div class="empty" style="padding:24px 0">Nada à frente.</div>`);
@@ -1435,7 +1446,8 @@ function eventoForm(rec = {}) {
     <div class="field"><label>Título *</label><input name="titulo" required value="${esc(rec.titulo||'')}" placeholder="Ex.: Reunião de briefing"></div>
     <div class="field-row">
       <div class="field"><label>Data *</label><input name="data" type="date" required value="${esc(rec.data||todayISO())}"></div>
-      <div class="field"><label>Hora</label><input name="hora" type="time" value="${esc(rec.hora||'')}"></div>
+      <div class="field"><label>Início</label><input name="hora" type="time" value="${esc(rec.hora||'')}"></div>
+      <div class="field"><label>Fim</label><input name="horaFim" type="time" value="${esc(rec.horaFim||'')}"></div>
     </div>
     <div class="field-row">
       <div class="field"><label>Tipo</label><select name="tipo">${options(T.evtTipo, rec.tipo||'reuniao')}</select></div>
@@ -1450,7 +1462,7 @@ function eventoForm(rec = {}) {
     if (fd.genMeet) {
       const email = clientEmailDoProjeto(fd.projetoId);
       try {
-        const r = await GCAL.criarReuniao({ titulo: fd.titulo, descricao: fd.notas, data: fd.data, hora: fd.hora, emailCliente: email });
+        const r = await GCAL.criarReuniao({ titulo: fd.titulo, descricao: fd.notas, data: fd.data, hora: fd.hora, horaFim: fd.horaFim, emailCliente: email });
         extra = { meet: r.meet, gcalId: r.gcalId };
         toast(email ? 'Meet criado e convite enviado ao cliente.' : 'Meet criado. (sem cliente vinculado ao projeto para convidar)');
       } catch (e) {

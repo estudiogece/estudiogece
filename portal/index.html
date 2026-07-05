@@ -114,6 +114,7 @@
   const linkHost = u => { try { return new URL(u).hostname.replace(/^www\./,''); } catch { return u; } };
   const today = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
   const fmtDate = iso => iso ? new Date(iso+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+  const evtHora = e => e && e.hora ? (e.horaFim ? `${e.hora}–${e.horaFim}` : e.hora) : '';
   const TIP = { residencial:'Residencial', comercial:'Comercial', comercial_especial:'Comercial especial', interiores:'Interiores', paisagistico:'Paisagístico', urbanistico:'Urbanístico', regularizacao:'Regularização', reforma:'Reforma', retrofit:'Retrofit', institucional:'Institucional', consultoria:'Consultoria' };
   const PST = { proposta:'Proposta', andamento:'Em andamento', pausado:'Pausado', concluido:'Concluído' };
   const EVT = { reuniao:'Reunião', visita:'Visita técnica', entrega:'Entrega', obra:'Obra', outro:'Compromisso' };
@@ -236,7 +237,7 @@
     if (eventos.length) {
       html += `<h2>Próximos compromissos</h2><div class="list">` + eventos.map(e => `
         <div class="li li-click" data-evt="${e.id}">
-          <div><div>${esc(e.titulo)}</div><div class="meta">${EVT[e.tipo]||''}${e.hora?(' · '+e.hora):''}${(e.notas||e.meet)?' · toque para ver':''}</div></div>
+          <div><div>${esc(e.titulo)}</div><div class="meta">${EVT[e.tipo]||''}${evtHora(e)?(' · '+evtHora(e)):''}${(e.notas||e.meet)?' · toque para ver':''}</div></div>
           <div style="display:flex;align-items:center;gap:14px">
             ${e.meet?`<a href="${esc(e.meet)}" target="_blank" rel="noopener" style="background:var(--bordeaux);color:#fff;text-decoration:none;font-weight:600;font-size:12.5px;padding:7px 12px;border-radius:8px;white-space:nowrap">🎥 Entrar na reunião</a>`:''}
             <span class="meta">${fmtDate(e.data)}</span>
@@ -282,7 +283,7 @@
         <div class="modal">
           <div class="modal-head"><h3>${esc(e.titulo)}</h3><button type="button" class="x-btn" id="evClose">✕</button></div>
           <div class="modal-body">
-            <div style="color:var(--muted);font-size:13.5px;margin-bottom:14px;text-transform:capitalize">${dataFull}${e.hora?(' · '+e.hora):''} · ${EVT[e.tipo]||''}</div>
+            <div style="color:var(--muted);font-size:13.5px;margin-bottom:14px;text-transform:capitalize">${dataFull}${evtHora(e)?(' · '+evtHora(e)):''} · ${EVT[e.tipo]||''}</div>
             ${e.meet?`<a href="${esc(e.meet)}" target="_blank" rel="noopener" style="display:inline-block;background:var(--bordeaux);color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:10px 16px;border-radius:8px;margin-bottom:16px">🎥 Entrar na reunião</a>`:''}
             ${e.notas?`<div style="white-space:pre-wrap;font-size:14px;line-height:1.5;background:#faf7f6;border:1px solid var(--line);border-radius:8px;padding:12px 14px">${esc(e.notas)}</div>`:'<div style="color:var(--muted);font-size:13.5px">Sem observações.</div>'}
           </div>
